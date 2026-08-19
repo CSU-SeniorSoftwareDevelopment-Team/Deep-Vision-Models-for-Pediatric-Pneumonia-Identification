@@ -1,0 +1,67 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\trey-\\Deep-Vision-Models-for-Pediatric-Pneumonia-Identification\\Deep_Image\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{9C7E3FBE-CEBA-48C6-AACC-165FB2B0C009}|Deep_Image\\Deep_Image.pyproj|C:\\Users\\trey-\\Deep-Vision-Models-for-Pediatric-Pneumonia-Identification\\Deep_Image\\Deep_Image\\Deep_Image.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{9C7E3FBE-CEBA-48C6-AACC-165FB2B0C009}|Deep_Image\\Deep_Image.pyproj|solutionrelative:Deep_Image\\Deep_Image.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 1,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedHeight": 703,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Deep_Image.py",
+              "DocumentMoniker": "C:\\Users\\trey-\\Deep-Vision-Models-for-Pediatric-Pneumonia-Identification\\Deep_Image\\Deep_Image\\Deep_Image.py",
+              "RelativeDocumentMoniker": "Deep_Image\\Deep_Image.py",
+              "ToolTip": "C:\\Users\\trey-\\Deep-Vision-Models-for-Pediatric-Pneumonia-Identification\\Deep_Image\\Deep_Image\\Deep_Image.py",
+              "RelativeToolTip": "Deep_Image\\Deep_Image.py",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-08-19T19:33:51.251Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{5a4e9529-b6a0-46b5-be4f-0f0b239bc0eb}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            }
+          ]
+        },
+        {
+          "DockedHeight": 33,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
