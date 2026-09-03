@@ -79,6 +79,7 @@ def main_loop():
 
  
     def Update_MED():
+        # use threads for all training and all run of images 
         #// background tasks ( anything that runs at a low frame rate )
         #print("threating is working, main thread running fine...")
         # Add UI and background data tasks here like saving or loai=ding quick data 
