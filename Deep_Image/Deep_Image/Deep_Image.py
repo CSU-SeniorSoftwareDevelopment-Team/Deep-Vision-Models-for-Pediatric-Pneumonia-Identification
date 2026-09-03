@@ -27,7 +27,8 @@ School:
 
 Development Period:         15 Weeks (August 2026 - December 2026)
 
----------------------------------------------------------------------------------------------------'''
+---------------------------------------------------------------------------------------------------
+'''
 
 
 import time
@@ -97,8 +98,9 @@ def main_loop():
 
     def Update_MED():
 
-        print( "Background FPS limited tasks are working... ")
-
+        #print( "Background FPS limited tasks are working... ")
+        
+        
 
         # Add low-frequency UI/application tasks here
         # low frequency networking, logging, processing, etc.
@@ -167,7 +169,6 @@ def main_loop():
         ULTRA_HIGH_INTERVAL,
         Update_ULTRA_HIGH
     )
-
 
     # =========================================================================
     # TESTING

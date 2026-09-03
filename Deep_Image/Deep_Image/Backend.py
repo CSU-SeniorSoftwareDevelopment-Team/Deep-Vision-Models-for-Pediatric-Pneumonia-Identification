@@ -18,6 +18,15 @@ class Backend:
 
     def __init__(self):
 
+
+
+
+
+
+
+
+
+
         # ---------------------------------------------------------
         # DEVICE
         # ---------------------------------------------------------
@@ -57,6 +66,8 @@ class Backend:
 
         # Print progress every N batches
         self.print_every = 10
+        
+        self.threshold = 70 # threshold for error
 
         # ---------------------------------------------------------
         # FILE PATHS
@@ -634,36 +645,43 @@ class Backend:
 
         self.model.eval()
 
-        with torch.no_grad():
+        average = 0 
+        samples = 2 # setting this too high does kind amake this run slow - 2 is a good number for now
 
-            sample = sample.to(
-                self.device
-            )
+        for i in range(0,samples):
 
-            outputs = self.model(
-                sample
-            )
+            with torch.no_grad():
 
-            probabilities = torch.softmax(
-                outputs,
-                dim=1
-            )
+                sample = sample.to(
+                    self.device
+                )
 
-            predicted = torch.argmax(
-                probabilities,
-                dim=1
-            )
+                outputs = self.model(
+                    sample
+                )
 
-            confidence = probabilities[
-                0,
+                probabilities = torch.softmax(
+                    outputs,
+                    dim=1
+                )
+
+                predicted = torch.argmax(
+                    probabilities,
+                    dim=1
+                )
+
+                confidence = probabilities[
+                    0,
+                    predicted.item()
+                ].item()
+
+            label = self.get_class_name(
                 predicted.item()
-            ].item()
+            )
+            average = average + confidence
 
-        label = self.get_class_name(
-            predicted.item()
-        )
-
-        return label, confidence
+         
+        return label, average/samples  # return the average confidence over 2 runs
 
 
 
@@ -707,6 +725,12 @@ class Backend:
         label, confidence = self.predict( # prediction 
             sample
         )
+
+        if confidence * 100 < self.threshold:
+            print(
+                f"Warning: Confidence {confidence * 100:.2f}% is below the threshold of {self.threshold}%"
+            )
+            # you can add additional logic here to handle low confidence predictions, such as returning a special value or raising an exception.
 
         print("\n==============================")
         print("PREDICTION")
