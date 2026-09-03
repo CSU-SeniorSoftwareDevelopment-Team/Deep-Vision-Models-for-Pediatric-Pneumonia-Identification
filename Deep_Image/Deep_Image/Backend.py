@@ -253,7 +253,7 @@ class Backend:
     # TRAIN MODEL
     # =============================================================
 
-    def train_model(self, epochs=None, on_training_complete = None):
+    def train_model(self, epochs=None, progress_callback=None ,  on_training_complete = None ):
 
         if epochs is None:
             epochs = self.epochs
@@ -422,6 +422,15 @@ class Backend:
                         f"| ETA: "
                         f"{estimated_remaining / 60:.1f} min"
                     )
+                    # sow results in UI
+                    if progress_callback is not None:
+
+                        progress_callback(
+                            epoch + 1,
+                            epochs,
+                            loss,
+                            current_accuracy
+                        )
 
             # EPOCH RESULTS
 

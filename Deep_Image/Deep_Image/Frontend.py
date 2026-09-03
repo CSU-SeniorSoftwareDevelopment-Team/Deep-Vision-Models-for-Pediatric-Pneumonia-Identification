@@ -1,8 +1,8 @@
 
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
-
+import threading
 
 class Frontend:
 
@@ -64,7 +64,6 @@ class Frontend:
         )
 
 
-        # ---------------------------------------------------------
         # RESULT WINDOW
 
         self.result_window = tk.Label(
@@ -81,7 +80,34 @@ class Frontend:
             pady=10
         )
 
+        # Training buttonm
+        self.train_button = tk.Button(
+            button_frame,
+            text="Start Training",
+            command=self.start_training,
+            width=20,
+            height=2
+        )
 
+        self.train_button.pack(
+            side=tk.LEFT,
+            padx=10
+        )
+
+        # trainign window 
+
+        self.training_window = tk.Label(
+            self.root,
+            text="Training: Not Started",
+            font=("Arial", 12),
+            relief=tk.SUNKEN,
+            width=35,
+            height=6,
+            justify=tk.LEFT,
+            anchor=tk.W
+        )
+
+ 
 
         # ---------------------------------------------------------
         # LOAD IMAGE BUTTON
@@ -130,6 +156,12 @@ class Frontend:
             padx=10
         )
 
+
+
+
+
+
+
     # =============================================================
     # LOAD IMAGE
     # =============================================================
@@ -171,9 +203,7 @@ class Frontend:
         # RESIZE IMAGE - make it big 
         # *( this is funky and cant be done in the backend because the backend is not aware of the UI )
 
-        image.thumbnail(
-            (760, 523)
-        )
+        image.thumbnail((699, 481))
 
         # ---------------------------------------------------------
         # TKINTER IMAGE CONVERSION
@@ -258,18 +288,116 @@ class Frontend:
     # =============================================================
     def start_training(self):
 
-        training_thread = threading.Thread(
-            target  =self.backend.train_model, # bound task
-            args    =(self.backend.epochs,),   # epoch # 
-            kwargs={
-                "on_training_complete": self.training_complete # pass it the callback function to the backend so that it can call it when training is complete
-            },
-            daemon=True # background thread so that the GUI does not freeze while PyTorch is training the model
+
+        self.training_window.pack(
+            padx=20,
+            pady=10
         )
 
+
+        # PREVENT MULTIPLE TRAINING JOBS
+
+        self.train_button.config(
+            state=tk.DISABLED
+        )
+        # UPDATE RESULT WINDOW
+
+        self.training_window.config(
+            text="Training Status\n\nStatus: Starting..."
+        )
+
+
+        # start background threading task for training the model
+        training_thread = threading.Thread(
+            target=self.backend.train_model,
+            args=(self.backend.epochs,),
+            kwargs={ 
+                "progress_callback": self.update_training_readout, 
+                "on_training_complete": self.training_complete   
+            },  
+            daemon = True # background pinning thread so that it does not block the main thread
+        )
         training_thread.start()
 
 
+        # Check the training thread periodically.
+        self.check_training_status(
+            training_thread
+        )
+
+
+
+
+
+    # =============================================================
+    # CHECK TRAINING STATUS
+    # =============================================================
+
+    def check_training_status(self, training_thread):
+
+        if training_thread.is_alive():
+
+            # Training is still running.
+            # Ask Tkinter to check again in 100 ms.
+
+            self.root.after(
+                100,
+                self.check_training_status, 
+                training_thread
+            )
+
+        else:
+
+
+            # TRAINING FINISHED
+            # We are back on the Tkinter main thread, so it is now
+            # safe to update GUI widgets or display a popup.
+ 
+
+            self.train_button.config(
+                state = tk.NORMAL
+            )
+
+            self.result_window.config(
+                text = "Training: Complete"
+            )
+            # remove training window
+            self.training_window.pack_forget()
+
+    def _update_training_readout(
+            self,
+            epoch,
+            total_epochs,
+            loss,
+            accuracy
+        ):
+
+        self.training_window.config(
+            text=(
+                f"Training Status\n\n"
+                f"Epoch:     {epoch} / {total_epochs}\n"
+                f"Loss:      {loss:.4f}\n"
+                f"Accuracy:  {accuracy * 100:.2f}%\n"
+                f"Status:    Training..."
+            )
+        )
+
+    def update_training_readout(
+            self,
+            epoch,
+            total_epochs,
+            loss,
+            accuracy
+        ):
+
+            self.root.after(
+                0,
+                self._update_training_readout,
+                epoch,
+                total_epochs,
+                loss,
+                accuracy
+            )
 
     # =============================================================
     # pop uo for trainign complete - needs to be moved toa class for these 
@@ -278,9 +406,16 @@ class Frontend:
 
     def training_complete(self):
 
+        self.root.after(
+            0,
+            self.show_training_complete_popup
+        )
+
+    def show_training_complete_popup(self):
+
         save_model = messagebox.askyesno(
             "Training Complete",
-            "Model training has completed...\n\n"
+            "Model training has completed.\n\n"
             "Would you like to save the trained ResNet50 model?"
         )
 
