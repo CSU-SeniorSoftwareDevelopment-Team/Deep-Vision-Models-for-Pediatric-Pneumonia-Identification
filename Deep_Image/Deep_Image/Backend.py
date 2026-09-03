@@ -69,6 +69,7 @@ class Backend:
 
         print(f"\nTraining folder: {self.train_data_folder}")
         print(f"Testing folder:  {self.test_data_folder}")
+        self.model_path = BASE_DIR / "pneumonia_resnet50.pth"
 
         # ---------------------------------------------------------
         # CHECK FOLDERS
@@ -221,6 +222,10 @@ class Backend:
         )
 
         print("Model loaded.")
+
+        # Load trained model on boot
+        self.loadModel()
+        print("Trained Model loaded.")
 
         # ---------------------------------------------------------
         # LOSS
@@ -476,26 +481,61 @@ class Backend:
             f"{total_training_time / 60:.2f} minutes"
         )
         # save the resenet50 model - load on boot 
-        torch.save(self.model.state_dict(), "pneumonia_resnet50.pth")
-        print("Model saved to pneumonia_resnet50.pth")
+        self.saveModel()
 
 
 
 
 
     # ===========================================================
-    # Load model 
+    # LOAD MODEL
     # ===========================================================
-    def loadModel():
+
+    def loadModel(self):
+
+        if not self.model_path.exists():
+
+            print("\n==============================")
+            print("NO TRAINED MODEL FOUND")
+            print("==============================")
+
+            return False
+
+        print("\n==============================")
+        print("LOADING TRAINED MODEL")
+        print("==============================")
+
         self.model.load_state_dict(
-            torch.load("pneumonia_resnet50.pth", map_location=self.device)
+            torch.load(
+                self.model_path,
+                map_location=self.device
+            )
         )
 
         self.model.to(self.device)
         self.model.eval()
 
+        print(
+            f"Model loaded from:\n"
+            f"{self.model_path}"
+        )
+
+        return True
 
 
+    
+    # ===========================================================
+    # SAVE MODEL
+    # ===========================================================
+
+
+    def saveModel(self):
+        torch.save(
+            self.model.state_dict(),
+            self.model_path
+        )
+
+        print(f"Model saved to: {self.model_path}")
 
 
 

@@ -65,16 +65,17 @@ def main_loop():
 
     
     backend = Backend.Backend()
- 
-    # Background training thread // need to set thiw on and off with a button in the UI
-    training_thread = threading.Thread(
-        target=backend.train_model,
-        args=(backend.epochs,),
-        daemon=True
-      )
+    backend.Run_Single_Img_Through()
+    '''
+        # Background training thread // need to set thiw on and off with a button in the UI
+        training_thread = threading.Thread(
+            target=backend.train_model,
+            args=(backend.epochs,),
+            daemon=True
+          )
 
-    training_thread.start()
-
+        training_thread.start()
+    '''
         
 
  
