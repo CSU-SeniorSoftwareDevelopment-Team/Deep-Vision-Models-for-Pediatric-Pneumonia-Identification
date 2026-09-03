@@ -27,7 +27,7 @@ class Backend:
         )
 
         print("\n==============================")
-        print("DEVICE INFORMATION")
+        print("DEVICE INFORMATION:")
         print("==============================")
 
         print(f"Using device: {self.device}")
@@ -39,13 +39,13 @@ class Backend:
             )
 
             print(
-                f"GPU Memory: "
+                f"GPU Memory available: "
                 f"{torch.cuda.get_device_properties(0).total_memory / 1024**3:.2f} GB"
             )
 
         else:
-            print("WARNING: CUDA is NOT available.")
-            print("Training will run on CPU.")
+            print("WARNING: CUDA is NOT available on this machine!")
+            print("Training will run on CPU... \n This will take some time...")
 
         # ---------------------------------------------------------
         # SETTINGS
@@ -72,7 +72,7 @@ class Backend:
         self.model_path = BASE_DIR / "pneumonia_resnet50.pth"
 
         # ---------------------------------------------------------
-        # CHECK FOLDERS
+        # CHECK FOLDERS - raise error if not found
         # ---------------------------------------------------------
 
         if not self.train_data_folder.exists():
@@ -88,7 +88,7 @@ class Backend:
             )
 
         # ---------------------------------------------------------
-        # IMAGE TRANSFORM
+        # IMAGE TRANSFORM - resize, grayscale, normalize
         # ---------------------------------------------------------
 
         self.transform = transforms.Compose([
@@ -110,7 +110,7 @@ class Backend:
         ])
 
         # ---------------------------------------------------------
-        # DATASETS
+        # DATASETS - load training and testing datasets using ImageFolder
         # ---------------------------------------------------------
 
         self.train_dataset = datasets.ImageFolder(
@@ -124,7 +124,7 @@ class Backend:
         )
 
         # ---------------------------------------------------------
-        # CHECK DATASET
+        # CHECK DATASET - raise error if not exactly 2 classes
         # ---------------------------------------------------------
 
         print("\n==============================")
@@ -154,23 +154,23 @@ class Backend:
             )
 
         # ---------------------------------------------------------
-        # DATALOADERS
+        # DATALOADERS - load training and testing datasets into DataLoader for batching
         # ---------------------------------------------------------
 
-        self.train_dataloader = DataLoader(
-            self.train_dataset,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=0,
-            pin_memory=torch.cuda.is_available()
+        self.train_dataloader = DataLoader(            # this is the training dataloader
+            self.train_dataset, 
+            batch_size      =self.batch_size,         
+            shuffle         =True,
+            num_workers     =0,
+            pin_memory      =torch.cuda.is_available()
         )
 
         self.test_dataloader = DataLoader(
             self.test_dataset,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=0,
-            pin_memory=torch.cuda.is_available()
+            batch_size      =self.batch_size,          # batch size for testing
+            shuffle         =False,                    # don't shuffle test data
+            num_workers     =0,                        # number of subprocesses to use for data loading. 0 means that the data will be loaded in the main process.
+            pin_memory      =torch.cuda.is_available() # pin memory if using GPU
         )
 
         print(
@@ -184,7 +184,7 @@ class Backend:
         )
 
         # ---------------------------------------------------------
-        # MODEL
+        # MODEL - load pretrained ResNet50 and modify for 2-class classification
         # ---------------------------------------------------------
 
         print("\n==============================")
@@ -201,10 +201,10 @@ class Backend:
         self.model.conv1 = nn.Conv2d(
             1,
             64,
-            kernel_size=7,
-            stride=2,
-            padding=3,
-            bias=False
+            kernel_size =7, # copied from resnet documention
+            stride      =2,
+            padding     =3,
+            bias        =False
         )
 
         # Two classes:
@@ -245,11 +245,15 @@ class Backend:
 
         print("Optimizer initialized.")
 
+
+
+
+
     # =============================================================
     # TRAIN MODEL
     # =============================================================
 
-    def train_model(self, epochs=None):
+    def train_model(self, epochs=None, on_training_complete = None):
 
         if epochs is None:
             epochs = self.epochs
@@ -274,13 +278,12 @@ class Backend:
 
         total_training_start = time.time()
 
-        for epoch in range(epochs): # epoch loop 
+        for epoch in range(epochs):         # epoch loop 
 
-            epoch_start = time.time()
-
-            running_loss = 0.0
-            correct = 0
-            total = 0
+            epoch_start         = time.time() # start up time
+            running_loss        = 0.0         # initialize running loss for the epoch
+            correct             = 0
+            total               = 0
 
             print("\n==============================")
             print(
@@ -292,7 +295,7 @@ class Backend:
                 self.train_dataloader
             ):
 
-                batch_start = time.time()
+                batch_start = time.time()   # start up time batch
 
                 # -------------------------------------------------
                 # MOVE DATA TO DEVICE  
@@ -481,8 +484,8 @@ class Backend:
             f"{total_training_time / 60:.2f} minutes"
         )
         # save the resenet50 model - load on boot 
-        self.saveModel()
-
+        if on_training_complete is not None:
+            on_training_complete() # CALL BACK TO FRONTSIDE POPUP FOR SAVE MODEL - THIS IS A CALLBACK FUNCTION PASSED FROM THE FRONTEND
 
 
 
