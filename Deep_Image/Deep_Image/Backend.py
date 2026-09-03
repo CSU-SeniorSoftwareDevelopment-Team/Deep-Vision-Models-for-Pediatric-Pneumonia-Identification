@@ -645,7 +645,7 @@ class Backend:
 
         self.model.eval()
 
-        average = 0 
+        sum_ = 0 
         samples = 2 # setting this too high does kind amake this run slow - 2 is a good number for now
 
         for i in range(0,samples):
@@ -678,10 +678,10 @@ class Backend:
             label = self.get_class_name(
                 predicted.item()
             )
-            average = average + confidence
+            sum_ = sum_ + confidence
 
          
-        return label, average/samples  # return the average confidence over 2 runs
+        return label, sum_/samples  # return the average confidence over 2 runs
 
 
 
