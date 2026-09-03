@@ -34,7 +34,13 @@ Development Period:         15 Weeks  ( August 2026 - December 2026 )
 
 
 import time
-import UI
+import Backend
+
+
+import threading
+
+
+
 
 def main_loop():
     
@@ -58,17 +64,30 @@ def main_loop():
     EXIT = False
 
     
-    
+    backend = Backend.Backend()
+ 
+    # Background training thread // need to set thiw on and off with a button in the UI
+    training_thread = threading.Thread(
+        target=backend.train_model,
+        args=(backend.epochs,),
+        daemon=True
+      )
 
-    
+    training_thread.start()
+
+        
+
  
     def Update_MED():
         #// background tasks ( anything that runs at a low frame rate )
+        #print("threating is working, main thread running fine...")
+        # Add UI and background data tasks here like saving or loai=ding quick data 
         pass
         
      
     def Update_HIGH():
         #// User interface here ( moderate frame rate ))
+
         pass 
         
 
