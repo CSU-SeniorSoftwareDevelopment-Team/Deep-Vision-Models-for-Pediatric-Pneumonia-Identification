@@ -19,7 +19,7 @@ Students:
                             - 1. Steven Andrews II
                             - 2. Bhavik Patel
                             - 3. Jhonathan Falls
-                            - 4. Ada Camillie
+                            - 4. Ahumada Camillie
 
 School:
                             Columbus State University

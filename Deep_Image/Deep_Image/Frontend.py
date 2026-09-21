@@ -71,11 +71,26 @@ class Frontend:
             text="Prediction: Waiting...",
             font=("Arial", 16),
             relief=tk.SUNKEN,
-            width=30,
-            height=3
+            width=45
         )
 
         self.result_window.pack(
+            padx=20,
+            pady=10
+        )
+
+        # STATS WINDOW - shows currently loaded model's test metrics
+        self.stats_window = tk.Label(
+            self.root,
+            text="Model Statistics: Loading...",
+            font=("Arial", 12),
+            relief=tk.SUNKEN,
+            width=40,
+            justify=tk.LEFT,
+            anchor=tk.W
+        )
+
+        self.stats_window.pack(
             padx=20,
             pady=10
         )
@@ -107,7 +122,7 @@ class Frontend:
             anchor=tk.W
         )
 
- 
+        
 
         # ---------------------------------------------------------
         # LOAD IMAGE BUTTON
@@ -256,11 +271,20 @@ class Frontend:
             f"Confidence: {confidence * 100:.2f}%"
         )
 
+        # CHECK CONFIDENCE THRESHOLD
+        below_threshold = (confidence * 100) < self.backend.threshold
 
+        if below_threshold:
+            result_text += (
+                f"\n !!! WARNING !!!: Confidence is below "
+                f"the {self.backend.threshold}% threshold.\n"
+                f"Consider manual review."
+            )
 
         # UPDATE RESULT 
         self.result_window.config(
-            text=result_text
+            text=result_text,
+            fg="red" if below_threshold else "black"
         )
 
         # CONSOLE OUTPUT
@@ -288,6 +312,16 @@ class Frontend:
     # =============================================================
     def start_training(self):
 
+        # CONFIRM BEFORE STARTING
+        confirm = messagebox.askyesno(
+            "Start Training",
+            f"This will train the model for {self.backend.epochs} epochs.\n\n"
+            "This may take a while and will use your CPU/GPU heavily.\n\n"
+            "Do you want to continue?"
+        )
+
+        if not confirm:
+            return  # user clicked "No" - do nothing
 
         self.training_window.pack(
             padx=20,
@@ -377,7 +411,7 @@ class Frontend:
                 f"Training Status\n\n"
                 f"Epoch:     {epoch} / {total_epochs}\n"
                 f"Loss:      {loss:.4f}\n"
-                f"Accuracy:  {accuracy * 100:.2f}%\n"
+                f"Accuracy:  {accuracy: .2f}%\n"
                 f"Status:    Training..."
             )
         )
@@ -428,6 +462,69 @@ class Frontend:
                 "The trained model has been saved successfully."
             )
 
+            # refresh stats to reflect the newly saved model
+            self.load_initial_stats()
+        else:
+            messagebox.showinfo(
+                "Not Saved",
+                "The newly trained weights were not saved. "
+                "The previous saved model file is unchanged."
+            )           
+
+
+    # =============================================================
+    # LOAD INITIAL STATS - show pretrained model's test performance
+    # =============================================================
+
+    # This function is called when the application starts to load the initial statistics of the pretrained model.
+    def load_initial_stats(self):
+
+        self.stats_window.config(
+            text="Model Statistics: Evaluating pretrained model..."
+        )
+
+        stats_thread = threading.Thread(
+            target=self._load_initial_stats_worker,
+            daemon=True
+        )
+        stats_thread.start()
+
+    # This function runs in a separate thread to evaluate the pretrained model and retrieve its statistics.
+    def _load_initial_stats_worker(self):
+
+        if not self.backend.model_path.exists():
+            self.root.after(
+                0,
+                lambda: self.stats_window.config(
+                    text="Model Statistics: No trained model found. Train a model first."
+                )
+            )
+            return
+
+        accuracy, sensitivity, f1_score, precision = self.backend.test_model()
+
+        self.root.after(
+            0,
+            self._display_stats,
+            accuracy,
+            sensitivity,
+            f1_score, 
+            precision
+        )
+
+    # This function updates the statistics window with the provided model statistics.
+    def _display_stats(self, accuracy, sensitivity, f1_score, precision):
+
+        self.stats_window.config(
+            text=(
+                f"Pretrained Model Statistics\n"
+                f"----------------------------------------------\n"
+                f"Accuracy:  {accuracy:.2f}%\n"
+                f"Precision: {precision * 100:.2f}%\n"
+                f"Recall (Sensitivity): {sensitivity * 100:.2f}%\n"
+                f"F1 Score:  {f1_score * 100:.2f}%"
+            )
+        )
 
     # =============================================================
     # START APPLICATION
@@ -441,5 +538,7 @@ class Frontend:
 
     def boot(self):
 
+        # Load the initial statistics of the pretrained model when the application starts.
+        self.load_initial_stats()
         self.root.mainloop()
 

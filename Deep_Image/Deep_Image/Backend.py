@@ -503,6 +503,10 @@ class Backend:
             f"Total training time: "
             f"{total_training_time / 60:.2f} minutes"
         )
+
+        # Run evaluation on the test set right after training
+        self.test_model()
+
         # save the resenet50 model - load on boot 
         if on_training_complete is not None:
             on_training_complete() # CALL BACK TO FRONTSIDE POPUP FOR SAVE MODEL - THIS IS A CALLBACK FUNCTION PASSED FROM THE FRONTEND
@@ -573,6 +577,14 @@ class Backend:
         correct = 0
         total = 0
 
+        # Recall (Sensitivity) counters 
+        true_positive = 0
+        false_negative = 0
+
+        # F1 score counters
+        false_positive = 0
+        true_negative = 0
+
         running_loss = 0.0
 
         with torch.no_grad():
@@ -605,11 +617,38 @@ class Backend:
                     1
                 )
 
+                # Calculate true positives and false negatives for recall calculation
+                true_positive += ((predicted == 1) & (labels == 1)).sum().item()
+                false_negative += ((predicted == 0) & (labels == 1)).sum().item()
+
+                # Calculate false positives and true negatives for F1 score calculation
+                false_positive += ((predicted == 1) & (labels == 0)).sum().item()
+                true_negative += ((predicted == 0) & (labels == 0)).sum().item()
+
                 total += labels.size(0)
 
                 correct += (
                     predicted == labels
                 ).sum().item()
+
+        # Calculate recall (sensitivity)
+        # Handle division by zero if there are no positive cases in the test set
+        sensitivity = (
+            true_positive / (true_positive + false_negative)
+            if (true_positive + false_negative) > 0 else 0.0
+            )
+
+        # Precision
+        precision = (
+            true_positive / (true_positive + false_positive)
+            if (true_positive + false_positive) > 0 else 0.0
+            )
+
+        # F1 score = harmonic mean of precision and recall
+        f1_score = (
+            2 * (precision * sensitivity) / (precision + sensitivity)
+            if (precision + sensitivity) > 0 else 0.0
+        )
 
         accuracy = (
             100 * correct / total
@@ -632,7 +671,29 @@ class Backend:
             f"Accuracy: {accuracy:.2f}%"
         )
 
-        return accuracy
+        print(
+            f"Recall (Sensitivity): "
+            f"{sensitivity * 100:.2f}%"
+        )
+        
+        print(
+            f"Precision: {precision * 100:.2f}%"
+        )
+
+        print(
+            f"F1 Score: {f1_score * 100:.2f}%"
+        )
+
+        # Confusion Matrix
+        print("\n==============================")
+        print("CONFUSION MATRIX")
+        print("==============================")
+        print(f"{'':17}{'Pred NORMAL':>14}{'Pred PNEUMONIA':>16}")
+        print(f"{'Actual NORMAL':17}{true_negative:>14}{false_positive:>16}")
+        print(f"{'Actual PNEUMONIA':17}{false_negative:>14}{true_positive:>16}")
+
+
+        return accuracy, sensitivity, f1_score, precision
 
     
     
