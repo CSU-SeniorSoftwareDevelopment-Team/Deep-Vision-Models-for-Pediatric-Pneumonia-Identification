@@ -5,7 +5,29 @@ DEEP IMAGE ( Server )
 Deep image server is a python AI model that uses Pytourch to train a neural network to predict the class of an image.
 The server is designed to be used in conjunction with a client application that sends images to the server for prediction.
 
+
+Architcecture:
+    The server is designed to be modular and extensible, with separate components for the backend, frontend, and networking. 
+    The backend handles the neural network, datasets, training, and predictions. 
+    The frontend handles the GUI and user interaction. 
+    The networking component handles the network communication with the client application.
+
+Features:
+    - Modular architecture for easy maintenance and extensibility.
+    - GUI for user interaction and monitoring.
+    - Networking component for handling client-server communication.
+    - Backend component for training and predicting image classes using a neural network.
+    - Secure communication using TLS/SSL for data transmission.
+    - Multi-threaded design for handling multiple client connections simultaneously.
+    - Background processing for training and prediction tasks to keep the GUI responsive.
+    - Support for image preprocessing, including resizing, grayscaling, and normalization.
+    - Support for training and testing datasets using PyTorch's ImageFolder.
+    - Support for logging and error handling to ensure robustness and reliability.
+
 ----------------------------------------------------------------------------------------------------
+Team Lead:                    Steven Andrews II
+
+
 Students:
                             - 1. Steven Andrews II
                             - 2. Bhavik Patel
@@ -17,6 +39,8 @@ School:
                             Fall 2026
 
 Development Period:         15 Weeks (August 2026 - December 2026)
+                            Cycle 1: 8 Weeks (August 2026 - October 2026)     - base implementation of the AI and demo
+                            Cycle 2: 7 Weeks (October 2026 - December 2026)   - Server based implementation / service of AI demo 
 
 ---------------------------------------------------------------------------------------------------
 '''

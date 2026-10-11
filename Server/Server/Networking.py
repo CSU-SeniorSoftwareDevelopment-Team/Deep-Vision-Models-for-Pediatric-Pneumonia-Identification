@@ -17,6 +17,7 @@ class Networking(object):
 
 
         self.users = {}  # Dictionary to keep track of connected users and their associated sockets
+        self.users["Steven"] = User.User("Steven", "password", "127.0.0.1", 8500)
 
 
 
