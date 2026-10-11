@@ -3,9 +3,14 @@ import ssl
 import threading 
 import struct  
 import time
+# backend imports
 from protocol import MsgType
+
 class Networking(object):
-    def __init__(self):
+    def __init__(self, user_manager):
+        self.user_manager           = user_manager # Dependency injection for user management
+        
+
         self.IP                     = '0.0.0.0'     # LISTEN ON ALL INTERFACES (0.0.0.0) ( TEAM NOTE: Steven Andrews II )
         self.port                   = 8500          # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
         self.is_connected           = False         # indicator 
@@ -16,8 +21,12 @@ class Networking(object):
         # start a timer
 
 
-        self.users = {}  # Dictionary to keep track of connected users and their associated sockets
-        self.users["Steven"] = User.User("Steven", "password", "127.0.0.1", 8500)
+        # load approved users IP addresses ( i kinda hacked this one )
+        # should be loaded via SQL or off disk and assembled at boot
+        user_manager.add_user( "steven"     , 1234, "127.0.0.1" , 8500)
+        user_manager.add_user( "Bhavik"     , 1234, "127.0.0.1" , 8500)
+        user_manager.add_user( "Jhonathan"  , 1234, "127.0.0.1" , 8500)
+        user_manager.add_user( "Ada"        , 1234, "127.0.0.1" , 8500)
 
 
 
@@ -49,6 +58,9 @@ class Networking(object):
             
             # make sure server.crt and server.key files exist in your folder
             # if you don't have them, in the files - this app will not work, crashing the server and client. 
+            # these should be generated using openssl or a similar tool : 
+            # tbh this should rotate every day or so, but for the sake of this demo, we will use a static cert and key.
+            # i think ill add a cert rotation system in the future, but for now, this is fine.
             context.load_cert_chain(certfile="server.crt", keyfile="server.key")
 
             
@@ -84,8 +96,20 @@ class Networking(object):
                 self.enable_windows_keepalive(raw_client_sock)
                 
                 # TLS secure handshake
-                secure_client_sock = context.wrap_socket(raw_client_sock, server_side=True)
+                secure_client_sock = context.wrap_socket(
+                                                            raw_client_sock,
+                                                            server_side      =True
+                                                         )
                 
+                # check user IP white list 
+                # search through users 
+                client_ip, client_port = addr
+                if self.user_manager.getUserByIP(client_ip):
+                   print("Valid IP!")
+                else :
+                   print("Invalid IP detected")
+                   continue
+
                 # thread the client handler to allow multiple clients to connect simultaneously
                 client_thread = threading.Thread(
                     target=self.Handler, 
@@ -136,15 +160,18 @@ class Networking(object):
                     print(f"Connection dropped during payload extraction from: {client_ip}")
                     break
                 
-
+                #---------------------------------------------------------------------------------
                 # parse th commands using the shared enum protocols
                 if msg_type == MsgType.LOGIN:
                     print(f"Received LOGIN command from {client_ip}")
+                    self.Login(client_ip,payload)
+
                 elif msg_type == MsgType.LOGOUT:
                     print(f"Received LOGOUT command from {client_ip}")
+                
                 elif msg_type == MsgType.IMAGE:
                     print(f"Received IMAGE data from {client_ip}, length: {payload_length} bytes")
-                    
+                #---------------------------------------------------------------------------------
 
             except (ConnectionResetError, ConnectionAbortedError, OSError):
                 print(f"Connection to client {client_ip} was forcibly lost.")
@@ -158,6 +185,18 @@ class Networking(object):
             client_socket.close()
         except Exception:
             pass
+
+
+
+
+
+
+    def Login(self, client_ip, payload):
+        pass
+
+
+
+
 
 
 

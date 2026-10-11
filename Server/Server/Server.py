@@ -56,7 +56,7 @@ import tkinter as tk
 import Backend
 import Frontend
 import Networking
-
+import UserManager
 
 def main_loop():
     
@@ -97,8 +97,11 @@ def main_loop():
      Frontend:
          Handles the GUI and user interaction.
     
+     user_manager: 
+         Manages user accounts and their associated data. passed to network 
+
      Networking:
-         Handles the network communication with the server.
+         Handles the network communication with the server.Takes in user manager
     
      Tkinter:
          Owns the MAIN THREAD.
@@ -107,8 +110,11 @@ def main_loop():
 
     root = tk.Tk()
 
-    backend = Backend.Backend()         
-    network = Networking.Networking() 
+    user_manager    = UserManager.UserManager()
+    backend         = Backend.Backend()         
+    network         = Networking.Networking( user_manager ) 
+
+
 
     # Frontend injected with root, backend, and network dependencies
     frontend = Frontend.Frontend(

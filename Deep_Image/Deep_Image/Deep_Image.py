@@ -1,20 +1,28 @@
 
 '''------------------------------------------------------------------------------------------------
-DEEP IMAGE ( overview ):
+DEEP IMAGE ( Client ) 
 ---------------------------------------------------------------------------------------------------
-Deep Image is a student-led senior software engineering project at Columbus State University.
+Deep Image is a client application that connects to a server to send and receive image data for processing.
+It utilizes a neural network backend for image analysis and a frontend GUI for user interaction.
+The application is designed to run on a local machine and communicate with a remote server for image processing tasks.
 
-The goal of this project is to create a deep learning image processing application to identify
-pneumonia in pediatric patients that can be used to enhance and manipulate images using
-state-of-the-art deep learning techniques.
+This desgine is a collaborative project developed by a team of students at Columbus State University 
+during the Fall 2026 semester.
 
-The application will be built using Python and will utilize various deep learning
-libraries such as TensorFlow, PyTorch, etc.
+The project is divided into two development cycles,focusing on the base implementation of the AI
+and demo in the first cycle,and server-based implementation/service of the AI demo in the second cycle.
 
-The application will be designed to be user-friendly and will provide a simple
-interface for users to upload images, process them, and view the results.
+This project hopes to mimic the functionality of a server-based image processing service, 
+allowing users to upload images, and receive processed results from the server,leveraging the power of neural 
+networks for image analysis. 
+
+This mimics real-world applications where client-server architectures 
+are used for computationally intensive tasks.
 
 ----------------------------------------------------------------------------------------------------
+Team Lead:                    Steven Andrews II
+
+
 Students:
                             - 1. Steven Andrews II
                             - 2. Bhavik Patel
@@ -26,10 +34,11 @@ School:
                             Fall 2026
 
 Development Period:         15 Weeks (August 2026 - December 2026)
+                            Cycle 1: 8 Weeks (August 2026 - October 2026)     - base implementation of the AI and demo
+                            Cycle 2: 7 Weeks (October 2026 - December 2026)   - Server based implementation / service of AI demo 
 
 ---------------------------------------------------------------------------------------------------
 '''
-
 
 import time
 import threading
