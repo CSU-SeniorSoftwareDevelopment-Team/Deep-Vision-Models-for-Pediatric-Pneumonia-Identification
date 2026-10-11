@@ -6,7 +6,7 @@ import threading
 
 class Frontend:
 
-    def __init__(self, root, backend_):
+    def __init__(self, root, backend_, network_):
 
         # ROOT WINDOW
 
@@ -26,7 +26,7 @@ class Frontend:
  
         # dependency injection for backend
         self.backend = backend_
-
+        self.network = network_
 
         # image_path:
         #     Stores the path of the currently selected image.

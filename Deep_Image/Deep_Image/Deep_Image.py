@@ -35,9 +35,11 @@ import time
 import threading
 import tkinter as tk
 
+
+# Backend Dependencies
 import Backend
 import Frontend
-
+import Networking
 
 def main_loop():
 
@@ -76,6 +78,9 @@ def main_loop():
      Frontend:
          Handles the GUI and user interaction.
     
+     Networking:
+         Handles the network communication with the server.
+    
      Tkinter:
          Owns the MAIN THREAD.
     '''
@@ -83,12 +88,17 @@ def main_loop():
 
     root = tk.Tk()
 
-    backend = Backend.Backend()
+    backend = Backend.Backend()         
+    network = Networking.Networking() 
 
+    # Frontend injected with root, backend, and network dependencies
     frontend = Frontend.Frontend(
         root,
-        backend
+        backend,
+        network
     )
+
+
 
 
     # =========================================================================
@@ -98,10 +108,8 @@ def main_loop():
 
     def Update_MED():
 
-        #print( "Background FPS limited tasks are working... ")
+        network.update()  # Update the network connection state handlers
         
-        
-
         # Add low-frequency UI/application tasks here
         # low frequency networking, logging, processing, etc.
 
