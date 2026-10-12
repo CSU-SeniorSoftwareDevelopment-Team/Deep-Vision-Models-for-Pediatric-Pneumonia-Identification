@@ -220,7 +220,7 @@ class Networking(object):
         elif msg_type == MsgType.IMAGE:
             self.handle_image_payload(payload)
 
-
+            U
     def handle_login_response(self,payload):
         response = payload.decode('utf-8')
         if response == "OK":
