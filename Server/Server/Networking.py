@@ -219,8 +219,7 @@ class Networking(object):
 
     def Logout(self, client_ip,client_socket, user_, payload):
 
-        if not user_.loggedin: # not logged in yet - can not logout 
-            return False
+        if  user_.loggedin == True: # not logged in yet - can not logout 
             user_.loggedin = False
             response = f"OK"
             self.send_packet(client_socket,MsgType.LOGOUT,response.encode('utf-8'))
@@ -229,12 +228,12 @@ class Networking(object):
         else:
             response = f"NO"
             self.send_packet(client_socket,MsgType.LOGOUT,response.encode('utf-8'))
-            print(f"Unauthorized Logout requested")
+            print(f"Unauthorized Logout requested {user_.username}")
         return False
 
 
     def RunImage(self, client_ip, client_socket, user_, payload):
-         if not user_.loggedin: # not logged in yet - can not run if not loged in  
+         if user_.loggedin == False: # not logged in yet - can not run if not loged in  
             return False
          # grab results and pass them back 
          label, confidence  = self.backend.predict_from_buffer(payload)
