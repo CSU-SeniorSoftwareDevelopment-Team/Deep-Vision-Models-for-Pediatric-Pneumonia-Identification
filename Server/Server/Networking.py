@@ -7,9 +7,9 @@ import time
 from protocol import MsgType
 
 class Networking(object):
-    def __init__(self, user_manager):
+    def __init__(self, backend , user_manager):
         self.user_manager           = user_manager # Dependency injection for user management
-        
+        self.backend                = backend
 
         self.IP                     = '0.0.0.0'     # LISTEN ON ALL INTERFACES (0.0.0.0) ( TEAM NOTE: Steven Andrews II )
         self.port                   = 8500          # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
@@ -23,10 +23,10 @@ class Networking(object):
 
         # load approved users IP addresses ( i kinda hacked this one )
         # should be loaded via SQL or off disk and assembled at boot
-        user_manager.add_user( "steven"     , 1234, "127.0.0.1" , 8500)
-        user_manager.add_user( "Bhavik"     , 1234, "127.0.0.1" , 8500)
-        user_manager.add_user( "Jhonathan"  , 1234, "127.0.0.1" , 8500)
-        user_manager.add_user( "Ada"        , 1234, "127.0.0.1" , 8500)
+        user_manager.add_user( "steven"     , "1234", "127.0.0.1" )
+        user_manager.add_user( "Bhavik"     , "1234", "127.0.0.1" )
+        user_manager.add_user( "Jhonathan"  , "1234", "127.0.0.1" )
+        user_manager.add_user( "Ada"        , "1234", "127.0.0.1" )
 
 
 
@@ -104,7 +104,10 @@ class Networking(object):
                 # check user IP white list 
                 # search through users 
                 client_ip, client_port = addr
-                if self.user_manager.getUserByIP(client_ip):
+
+                user_ = self.user_manager.getUserByIP(client_ip)
+
+                if user_:
                    print("Valid IP!")
                 else :
                    print("Invalid IP detected")
@@ -113,7 +116,7 @@ class Networking(object):
                 # thread the client handler to allow multiple clients to connect simultaneously
                 client_thread = threading.Thread(
                     target=self.Handler, 
-                    args=(secure_client_sock, addr), 
+                    args=(secure_client_sock,user_, addr), 
                     daemon=True
                 )
                 client_thread.start()
@@ -132,7 +135,7 @@ class Networking(object):
             addr (tuple) - The address of the connected client.
         Returns: None
     '''
-    def Handler(self, client_socket, addr):
+    def Handler(self, client_socket, user_ ,  addr):
         client_ip, client_port = addr
         print(f"Connection established from client address: {client_ip}:{client_port}")
         
@@ -164,7 +167,7 @@ class Networking(object):
                 # parse th commands using the shared enum protocols
                 if msg_type == MsgType.LOGIN:
                     print(f"Received LOGIN command from {client_ip}")
-                    self.Login(client_ip,payload)
+                    self.Login(client_ip,user_,payload)
 
                 elif msg_type == MsgType.LOGOUT:
                     print(f"Received LOGOUT command from {client_ip}")
@@ -191,12 +194,38 @@ class Networking(object):
 
 
 
-    def Login(self, client_ip, payload):
-        pass
+    def Login(self, client_ip, user_, payload):
+        incoming_string = payload.decode('utf-8')
+        username, password = incoming_string.split(':')
+        if username == user_.username and password == user_.password:
+            user_.loggedin = True
+            print(f"Authentication success for user '{username}' from {client_ip}")
+            return True
+        else:
+            print(f"Authentication failed: Invalid credentials from {client_ip}")
+        return False
 
 
+    def Logout(self, client_ip, user_, payload):
+        incoming_string = payload.decode('utf-8')
 
+        if not user_.loggedin: # not logged in yet - can not logout 
+            return False
 
+        if incoming_string == user_.password:
+            user_.loggedin = False
+            print(f"Authentication success for user / Logging out")
+            return True
+        else:
+            print(f"Authentication failed: Invalid credentials from {client_ip}")
+        return False
+
+    def RunImage(self, client_ip, user_, payload):
+         if not user_.loggedin: # not logged in yet - can not logout 
+            return False
+
+         self.backend.predict_from_buffer(payload)
+         return True
 
 
 

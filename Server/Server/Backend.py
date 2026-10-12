@@ -284,6 +284,29 @@ class Backend(object):
         print(f"Model saved to: {self.model_path}")
 
 
+    '''
+    Predict images from network buffer
+    '''
+    def predict_from_buffer(self, image_bytes):
+        image_stream = io.BytesIO(image_bytes)
+        image = Image.open(image_stream).convert("L")
+
+        sample = self.transform(image).unsqueeze(0)
+
+        label, confidence = self.predict(sample)
+
+        if confidence * 100 < self.threshold:
+            print(f"Warning: Confidence {confidence * 100:.2f}% is below threshold of {self.threshold}%")
+
+        print("\n==============================")
+        print("PREDICTION (FROM BUFFER)")
+        print("==============================")
+        print(f"Prediction: {label}")
+        print(f"Confidence: {confidence * 100:.2f}%")
+
+        return label, confidence
+
+
 
     '''
        predict - predicts the class of a given sample using the trained model.

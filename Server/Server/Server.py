@@ -112,7 +112,7 @@ def main_loop():
 
     user_manager    = UserManager.UserManager()
     backend         = Backend.Backend()         
-    network         = Networking.Networking( user_manager ) 
+    network         = Networking.Networking( backend,user_manager ) 
 
 
 

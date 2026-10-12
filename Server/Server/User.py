@@ -4,10 +4,13 @@ User class to store user information
 '''
 
 class User():
-    def __init__(self, username, password ,ip , port ):
+    def __init__(self, username, password ,ip  ):
         self.username       = username
         self.password       = password
         self.IP_address     = ip
-        self.port           = port
+        self.port           = 0
+
+
+        self.loggedin = False
 
 
