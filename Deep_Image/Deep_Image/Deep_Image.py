@@ -118,7 +118,7 @@ def main_loop():
     def Update_MED():
 
         network.update()  # Update the network connection state handlers
-        
+        frontend.update()
         # Add low-frequency UI/application tasks here
         # low frequency networking, logging, processing, etc.
 

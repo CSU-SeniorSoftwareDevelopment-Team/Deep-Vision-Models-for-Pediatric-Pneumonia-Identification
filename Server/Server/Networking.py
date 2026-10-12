@@ -109,12 +109,11 @@ class Networking(object):
                 client_ip, client_port = addr
 
                 user_ = self.user_manager.getUserByIP(client_ip)
-
                 if user_:
                    print("Valid IP!")
                 else :
                    print("Invalid IP detected")
-                   continue
+                   continue # skip creating a listener thread 
 
                 # thread the client handler to allow multiple clients to connect simultaneously
                 client_thread = threading.Thread(
@@ -225,12 +224,12 @@ class Networking(object):
             user_.loggedin = False
             response = f"OK"
             self.send_packet(client_socket,MsgType.LOGOUT,response.encode('utf-8'))
-            print(f"Authentication success for user / Logging out")
+            print(f"Logout requested")
             return True
         else:
             response = f"NO"
             self.send_packet(client_socket,MsgType.LOGOUT,response.encode('utf-8'))
-            print(f"Authentication failed: Invalid credentials from {client_ip}")
+            print(f"Unauthorized Logout requested")
         return False
 
 

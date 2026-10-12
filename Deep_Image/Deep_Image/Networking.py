@@ -4,6 +4,11 @@ import threading
 import struct  
 import time
 from protocol import MsgType
+
+'''
+CLIENT SIDE NETWORKING:
+TCP-TLS Client side communication for low speed applications 
+'''
 class Networking(object):
     def __init__(self):
         self.IP                     = '127.0.0.1'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
@@ -245,9 +250,5 @@ class Networking(object):
         if self.is_running == False:
            if time.time() - self.current_time >  5:
               self.Start()
-              print(f"click... {self.is_running}")
               self.current_time = time.time()
 
-              # test auto send login attemot 
-              credentials = "steven:1234"
-              self.send_packet(MsgType.LOGIN, credentials.encode('utf-8'))
