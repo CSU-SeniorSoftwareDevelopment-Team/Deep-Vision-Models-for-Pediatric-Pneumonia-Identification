@@ -9,6 +9,7 @@ class Networking(object):
         self.IP                     = '127.0.0.1'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
         self.port                   = 8500          # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
         self.is_connected           = False         # indicator 
+        self.is_loggedin            = False
         self.is_running             = False         # indicator for the background thread
         self.keepalive_time         = 5000          # Time in seconds before sending the first keep-alive probe
         self.keepalive_interval     = 1000          # Time in seconds between keep-alive probes
@@ -48,13 +49,13 @@ class Networking(object):
             self.soc.connect((self.IP, self.port))
 
             self.is_connected = True
-           
+            self.is_running = True
             # start thread - background thread to monitor the connection state and process incoming data
             monitor_thread = threading.Thread(target=self.NET, daemon=True)
             monitor_thread.start()
             
             print(f"Successfully connected to {self.IP}:{self.port} and spooled monitor thread.")
-            is_running = True
+            
             return True
             
         except Exception as e:
@@ -142,19 +143,21 @@ class Networking(object):
         Parameters: message (str) - The message to send to the server.
         Returns: True if the message was sent successfully, False otherwise.
     '''
-    def Send(self, message: str):
+    def send_packet(self, msg_type: MsgType, payload_bytes: bytes):
         if not self.is_connected or not self.soc:
-            print("NetWork is down...")
+            print("Network is down...")
             return False
         try:
-            self.soc.sendall(message.encode('utf-8'))
+            # Pack the Enum value and the payload size into exactly 8 bytes
+            header = struct.pack('!II', int(msg_type), len(payload_bytes))
+            
+            # Blast the header and the payload together down the TLS socket
+            self.soc.sendall(header + payload_bytes)
             return True
         except (OSError, ConnectionError) as e:
             print(f"Send failed. Network just died: {e}")
             self.is_connected = False
             return False
-
-
 
     ''' enable_windows_keepalive:
         Enables Windows Keep-Alives on a socket.
@@ -213,6 +216,22 @@ class Networking(object):
             self.handle_image_payload(payload)
 
 
+    def handle_login_response(self,payload):
+        response = payload.decode('utf-8')
+        if response == "OK":
+            self.is_loggedin = True
+        if response == "NO":
+            self.is_loggedin = False
+
+    def handle_logout_response(self,payload):
+        response = payload.decode('utf-8')
+        if response == "OK":
+            self.is_loggedin = False
+
+    def handle_image_payload(self,payload):
+        response = payload.decode('utf-8')
+        print(response)
+
     '''
         update: 
         Internal clock for the networking class to check its internal state for periodic checks, chamges, and logic.
@@ -223,7 +242,12 @@ class Networking(object):
     '''
     def update(self):
         # tries to reconnect/start background thread if the connection is down
-        if not self.is_running:
+        if self.is_running == False:
            if time.time() - self.current_time >  5:
               self.Start()
+              print(f"click... {self.is_running}")
               self.current_time = time.time()
+
+              # test auto send login attemot 
+              credentials = "steven:1234"
+              self.send_packet(MsgType.LOGIN, credentials.encode('utf-8'))

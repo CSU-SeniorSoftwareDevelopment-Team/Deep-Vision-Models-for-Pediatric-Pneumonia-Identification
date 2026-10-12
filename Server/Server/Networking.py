@@ -15,6 +15,8 @@ class Networking(object):
         self.port                   = 8500          # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
         self.is_connected           = False         # indicator 
         self.is_running             = False         # indicator for the background thread
+        
+        #settings
         self.keepalive_time         = 5000          # Time in seconds before sending the first keep-alive probe
         self.keepalive_interval     = 1000          # Time in seconds between keep-alive probes
         self.connection_amount      = 10            # maximum number of connections allowed
@@ -167,13 +169,16 @@ class Networking(object):
                 # parse th commands using the shared enum protocols
                 if msg_type == MsgType.LOGIN:
                     print(f"Received LOGIN command from {client_ip}")
-                    self.Login(client_ip,user_,payload)
+                    self.Login(client_ip,client_socket,user_,payload)
 
                 elif msg_type == MsgType.LOGOUT:
                     print(f"Received LOGOUT command from {client_ip}")
+                    self.Logout(client_ip,client_socket,user_,payload)
                 
                 elif msg_type == MsgType.IMAGE:
                     print(f"Received IMAGE data from {client_ip}, length: {payload_length} bytes")
+                    self.RunImage(client_ip,client_socket,user_,payload)
+                    
                 #---------------------------------------------------------------------------------
 
             except (ConnectionResetError, ConnectionAbortedError, OSError):
@@ -194,37 +199,45 @@ class Networking(object):
 
 
 
-    def Login(self, client_ip, user_, payload):
+    def Login(self, client_ip,client_socket, user_, payload):
         incoming_string = payload.decode('utf-8')
         username, password = incoming_string.split(':')
         if username == user_.username and password == user_.password:
             user_.loggedin = True
+            response = f"OK"
+            self.send_packet(client_socket,MsgType.LOGIN,response.encode('utf-8'))
             print(f"Authentication success for user '{username}' from {client_ip}")
             return True
         else:
+            response = f"NO"
+            self.send_packet(client_socket,MsgType.LOGIN,response.encode('utf-8'))
             print(f"Authentication failed: Invalid credentials from {client_ip}")
         return False
 
 
-    def Logout(self, client_ip, user_, payload):
-        incoming_string = payload.decode('utf-8')
+    def Logout(self, client_ip,client_socket, user_, payload):
 
         if not user_.loggedin: # not logged in yet - can not logout 
             return False
-
-        if incoming_string == user_.password:
             user_.loggedin = False
+            response = f"OK"
+            self.send_packet(client_socket,MsgType.LOGOUT,response.encode('utf-8'))
             print(f"Authentication success for user / Logging out")
             return True
         else:
+            response = f"NO"
+            self.send_packet(client_socket,MsgType.LOGOUT,response.encode('utf-8'))
             print(f"Authentication failed: Invalid credentials from {client_ip}")
         return False
 
-    def RunImage(self, client_ip, user_, payload):
-         if not user_.loggedin: # not logged in yet - can not logout 
-            return False
 
-         self.backend.predict_from_buffer(payload)
+    def RunImage(self, client_ip, client_socket, user_, payload):
+         if not user_.loggedin: # not logged in yet - can not run if not loged in  
+            return False
+         # grab results and pass them back 
+         label, confidence  = self.backend.predict_from_buffer(payload)
+         response = f"OK:{label}:{confidence}"
+         self.send_packet(client_socket,MsgType.IMAGE,out_.encode('utf-8'))
          return True
 
 

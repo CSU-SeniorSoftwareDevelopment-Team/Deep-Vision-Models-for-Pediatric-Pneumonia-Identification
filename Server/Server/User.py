@@ -10,7 +10,6 @@ class User():
         self.IP_address     = ip
         self.port           = 0
 
-
         self.loggedin = False
 
 
