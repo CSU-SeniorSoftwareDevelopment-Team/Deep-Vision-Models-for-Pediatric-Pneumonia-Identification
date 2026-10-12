@@ -14,10 +14,11 @@ class DashboardPage(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         
+        # window lable
         self.title_label = tk.Label(self, text="Dashboard Workspace", font=("Arial", 16))
         self.title_label.pack(pady=50)
         
-        # Styled with a red background matching standard dashboard logouts
+        # button with red BG
         logoff_btn = tk.Button(
             self, text="Logoff Session", bg="#d32f2f", fg="white", font=("Arial", 11, "bold"),
             command=self.trigger_logoff

@@ -11,6 +11,7 @@ class Networking(object):
         self.user_manager           = user_manager # Dependency injection for user management
         self.backend                = backend
 
+
         self.IP                     = '0.0.0.0'     # LISTEN ON ALL INTERFACES (0.0.0.0) ( TEAM NOTE: Steven Andrews II )
         self.port                   = 8500          # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
         self.is_connected           = False         # indicator 
@@ -197,7 +198,9 @@ class Networking(object):
 
 
 
-
+    #==============================================================================
+    # APPLICATION PROTOCOL LAYER
+    #==============================================================================
 
     def Login(self, client_ip,client_socket, user_, payload):
         incoming_string = payload.decode('utf-8')
