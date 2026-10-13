@@ -69,8 +69,6 @@ class Frontend:
 
 
 
-
-
     '''
     Show_page: Raises the specified page frame to the top of the stack, making it visible.
     '''
@@ -81,9 +79,6 @@ class Frontend:
             frame.tkraise()
         else:
             print(f"Error: View component '{page_name}' has not been registered inside Frontend initialization.")
-
-
-
 
 
 
@@ -139,6 +134,8 @@ class Frontend:
         image.thumbnail((699, 481))
 
 
+
+
     '''
     Boot: Starts the Tkinter main event loop, allowing the GUI to run and respond to user interactions.
     '''
@@ -146,7 +143,9 @@ class Frontend:
          self.root.mainloop()
          
 
-
+    '''
+        thread safe update / 30 FPS
+    '''
     def update(self):
         if self.network.is_loggedin == True and self.inDash == False :
            self.show_page("DashboardPage")
