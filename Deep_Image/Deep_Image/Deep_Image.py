@@ -97,13 +97,12 @@ def main_loop():
 
     root = tk.Tk()
 
-    backend = Backend.Backend()         
+       
     network = Networking.Networking() 
 
     # Frontend injected with root, backend, and network dependencies
     frontend = Frontend.Frontend(
         root,
-        backend,
         network
     )
 

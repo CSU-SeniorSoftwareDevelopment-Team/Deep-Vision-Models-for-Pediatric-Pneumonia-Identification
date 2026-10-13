@@ -15,14 +15,14 @@ from DashboardPage import DashboardPage
 
 
 class Frontend:
-    def __init__(self, root, backend_, network_):
+    def __init__(self, root, network_):
         self.root = root
         self.root.title("DeepImage - Server")
         self.root.geometry("900x700")
         self.inDash = False
 
         # Dependency injection
-        self.backend = backend_
+
         self.network = network_
 
         # Dynamic Page Container
@@ -47,8 +47,6 @@ class Frontend:
         # Show the login frame layout first
         self.show_page("LoginPage")
         
-        # Kick off continuous, thread-safe asynchronous state checks
-        self.update_network_status_loop()
         print(" [Frontend] Initialized")
 
 
@@ -68,11 +66,6 @@ class Frontend:
         self.net_indicator.pack(side="left", padx=5)
         self.net_dot = self.net_indicator.create_oval(2, 2, 14, 14, fill="red")
 
-        # Remote server context operational status engine 
-        tk.Label(bar, text="Server State:", bg="#f0f0f0", font=("Arial", 10, "bold")).pack(side="left", padx=(20, 5))
-        self.state_indicator = tk.Canvas(bar, width=15, height=15, bg="#f0f0f0", highlightthickness=0)
-        self.state_indicator.pack(side="left", padx=5)
-        self.state_dot = self.state_indicator.create_oval(2, 2, 14, 14, fill="blue")
 
 
 
@@ -92,25 +85,6 @@ class Frontend:
 
 
 
-    '''
-    Update_network_status_loop: Continuously checks the network and backend state, updating the indicator colors accordingly.
-    '''
-    def update_network_status_loop(self):
-
-        if self.network and self.network.is_connected:
-            self.net_indicator.itemconfig(self.net_dot, fill="green")
-        else:
-            self.net_indicator.itemconfig(self.net_dot, fill="red")
-
-        if self.backend and hasattr(self.backend, 'state'):
-            if self.backend.state == "PROCESSING":
-                self.state_indicator.itemconfig(self.state_dot, fill="yellow")
-            elif self.backend.state == "ERROR":
-                self.state_indicator.itemconfig(self.state_dot, fill="red")
-            else:
-                self.state_indicator.itemconfig(self.state_dot, fill="blue")
-
-        self.root.after(200, self.update_network_status_loop)
 
 
 
@@ -176,7 +150,10 @@ class Frontend:
     def update(self):
         if self.network.is_loggedin == True and self.inDash == False :
            self.show_page("DashboardPage")
-
+        if self.network and self.network.is_connected:
+            self.net_indicator.itemconfig(self.net_dot, fill="green")
+        else:
+            self.net_indicator.itemconfig(self.net_dot, fill="red")
 
 
 
