@@ -9,6 +9,7 @@ class User():
         self.password       = password
         self.IP_address     = ip
         self.port           = 0
+        self.idelTick       = 0  
 
         self.loggedin = False
 

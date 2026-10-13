@@ -72,7 +72,10 @@ class Frontend:
         self.state_indicator.pack(side="left", padx=5)
         self.state_dot = self.state_indicator.create_oval(2, 2, 14, 14, fill="blue")
 
-
+        # Active Users display
+        tk.Label(bar, text="Active Users:", bg="#f0f0f0", font=("Arial", 10, "bold")).pack(side="left", padx=(20, 5))
+        self.user_count_label = tk.Label(bar, text=str(self.network.numberOfActiveUsers), bg="#f0f0f0", font=("Arial", 10))
+        self.user_count_label.pack(side="left", padx=5)
 
 
 
@@ -136,3 +139,7 @@ class Frontend:
     '''
     def boot(self):
          self.root.mainloop()
+
+    def Update(self):
+        # refresh stats 
+        self.user_count_label.config(text=str(self.network.numberOfActiveUsers)) 

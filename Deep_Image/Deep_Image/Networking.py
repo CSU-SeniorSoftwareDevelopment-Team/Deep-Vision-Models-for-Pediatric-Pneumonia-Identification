@@ -150,7 +150,6 @@ class Networking(object):
     '''
     def send_packet(self, msg_type: MsgType, payload_bytes: bytes):
         if not self.is_connected or not self.soc:
-            print("Network is down...")
             return False
         try:
             # Pack the Enum value and the payload size into exactly 8 bytes
@@ -220,7 +219,7 @@ class Networking(object):
         elif msg_type == MsgType.IMAGE:
             self.handle_image_payload(payload)
 
-            U
+
     def handle_login_response(self,payload):
         response = payload.decode('utf-8')
         if response == "OK":

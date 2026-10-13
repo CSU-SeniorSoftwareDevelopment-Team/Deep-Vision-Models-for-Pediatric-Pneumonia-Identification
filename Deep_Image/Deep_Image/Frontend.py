@@ -170,7 +170,7 @@ class Frontend:
     '''
     def boot(self):
          self.root.mainloop()
-
+         
 
 
     def update(self):

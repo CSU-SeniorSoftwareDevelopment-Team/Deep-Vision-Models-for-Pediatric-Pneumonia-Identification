@@ -9,18 +9,20 @@ from protocol import MsgType
 class Networking(object):
     def __init__(self, backend , user_manager):
         self.user_manager           = user_manager # Dependency injection for user management
-        self.backend                = backend
+        self.backend                = backend      # Backend AI hookup 
 
 
         self.IP                     = '0.0.0.0'     # LISTEN ON ALL INTERFACES (0.0.0.0) ( TEAM NOTE: Steven Andrews II )
         self.port                   = 8500          # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
         self.is_connected           = False         # indicator 
         self.is_running             = False         # indicator for the background thread
+        self.numberOfActiveUsers    = 0 
         
         #settings
         self.keepalive_time         = 5000          # Time in seconds before sending the first keep-alive probe
         self.keepalive_interval     = 1000          # Time in seconds between keep-alive probes
         self.connection_amount      = 10            # maximum number of connections allowed
+        self.UserTimeOut            = 10000
         # start a timer
 
 
@@ -169,14 +171,17 @@ class Networking(object):
                 # parse th commands using the shared enum protocols
                 if msg_type == MsgType.LOGIN:
                     print(f"Received LOGIN command from {client_ip}")
+                    user_.idelTick = 0 # any new data resets the Idel ticks 
                     self.Login(client_ip,client_socket,user_,payload)
 
                 elif msg_type == MsgType.LOGOUT:
                     print(f"Received LOGOUT command from {client_ip}")
+                    user_.idelTick = 0 
                     self.Logout(client_ip,client_socket,user_,payload)
                 
                 elif msg_type == MsgType.IMAGE:
                     print(f"Received IMAGE data from {client_ip}, length: {payload_length} bytes")
+                    user_.idelTick = 0 
                     self.RunImage(client_ip,client_socket,user_,payload)
                     
                 #---------------------------------------------------------------------------------
@@ -195,7 +200,21 @@ class Networking(object):
             pass
 
 
+    def AddActiveUser(self,bool_ = True):
+        if bool_ == True: 
+            self.numberOfActiveUsers += 1
+        else:
+            if self.numberOfActiveUsers > 0:
+                self.numberOfActiveUsers -= 1
+        
 
+    def ForceLogout(self, user):
+        self.AddActiveUser(False)
+        user.loggedin = False
+        # tell the client that the server logged him out - this should force the client app
+        # to bring them back to the login page 
+        response = f"OK"
+        self.send_packet(client_socket,MsgType.LOGOUT,response.encode('utf-8'))
 
     #==============================================================================
     # APPLICATION PROTOCOL LAYER
@@ -204,7 +223,9 @@ class Networking(object):
     def Login(self, client_ip,client_socket, user_, payload):
         incoming_string = payload.decode('utf-8')
         username, password = incoming_string.split(':')
+        
         if username == user_.username and password == user_.password:
+            self.AddActiveUser()
             user_.loggedin = True
             response = f"OK"
             self.send_packet(client_socket,MsgType.LOGIN,response.encode('utf-8'))
@@ -219,7 +240,8 @@ class Networking(object):
 
     def Logout(self, client_ip,client_socket, user_, payload):
 
-        if  user_.loggedin == True: # not logged in yet - can not logout 
+        if  user_.loggedin == True: # logged in already
+            self.AddActiveUser(False)
             user_.loggedin = False
             response = f"OK"
             self.send_packet(client_socket,MsgType.LOGOUT,response.encode('utf-8'))
@@ -303,4 +325,10 @@ class Networking(object):
         Returns: None
     '''
     def Update(self):
-        pass
+       
+        # force user to logout if inactive for 5.5 min straight ( User security )
+        for user_ in self.user_manager.users.values():
+            user_.idelTick += 1
+            if user_.idelTick > self.UserTimeOut:
+                self.ForceLogout()
+                user_.idelTick  = 0

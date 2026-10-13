@@ -133,7 +133,7 @@ def main_loop():
     def Update_MED():
 
         network.Update()  # Update the network connection state handlers
-        
+        frontend.Update()
         # Add low-frequency UI/application tasks here
         # low frequency networking, logging, processing, etc.
 
