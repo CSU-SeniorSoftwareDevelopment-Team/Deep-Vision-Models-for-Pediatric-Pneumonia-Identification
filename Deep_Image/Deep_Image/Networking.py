@@ -11,14 +11,14 @@ TCP-TLS Client side communication for low speed applications
 '''
 class Networking(object):
     def __init__(self):
-        self.IP                     = '127.0.0.1'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
-        self.port                   = 8500          # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
-        self.is_connected           = False         # indicator 
+        self.IP                     = '100.105.179.38'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
+        self.port                   = 8500               # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
+        self.is_connected           = False              # indicator 
         self.is_loggedin            = False
-        self.is_running             = False         # indicator for the background thread
-        self.keepalive_time         = 5000          # Time in seconds before sending the first keep-alive probe
-        self.keepalive_interval     = 1000          # Time in seconds between keep-alive probes
-        self.soc                    = None          # socket object for the connection
+        self.is_running             = False              # indicator for the background thread
+        self.keepalive_time         = 5000               # Time in seconds before sending the first keep-alive probe
+        self.keepalive_interval     = 1000               # Time in seconds between keep-alive probes
+        self.soc                    = None               # socket object for the connection
         self.forcedLogOut           = False
         # start a timer
 
@@ -163,6 +163,8 @@ class Networking(object):
             self.is_connected = False
             return False
 
+
+
     ''' enable_windows_keepalive:
         Enables Windows Keep-Alives on a socket.
         
@@ -175,6 +177,7 @@ class Networking(object):
         # Enable TCP keep-alive
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.ioctl(socket.SIO_KEEPALIVE_VALS, (1, self.keepalive_time, self.keepalive_interval))
+
 
 
 
@@ -201,6 +204,33 @@ class Networking(object):
             self.soc = None
 
 
+
+    def handle_image_payload(self,payload):
+        response = payload.decode('utf-8')
+        print(response)
+
+    '''
+        update: 
+        Internal clock for the networking class to check its internal state for periodic checks, chamges, and logic.
+        This function is locked by the scheduler to 30 FPS 
+
+        Parameters: None
+        Returns: None
+    '''
+    def update(self):
+        # tries to reconnect/start background thread if the connection is down
+        if self.is_running == False:
+           if time.time() - self.current_time >  5:
+              self.Start()
+              self.current_time = time.time()
+
+
+
+    #=======================================================================
+    # Application protocol layer 
+    #=======================================================================
+
+    
     ''' 
         process_message: Processes incoming messages based on their type. [ Parser for incoming messages ]
         
@@ -235,24 +265,3 @@ class Networking(object):
             print("forced logout detected")
             self.forcedLogOut = True
             self.is_loggedin = False
-
-
-    def handle_image_payload(self,payload):
-        response = payload.decode('utf-8')
-        print(response)
-
-    '''
-        update: 
-        Internal clock for the networking class to check its internal state for periodic checks, chamges, and logic.
-        This function is locked by the scheduler to 30 FPS 
-
-        Parameters: None
-        Returns: None
-    '''
-    def update(self):
-        # tries to reconnect/start background thread if the connection is down
-        if self.is_running == False:
-           if time.time() - self.current_time >  5:
-              self.Start()
-              self.current_time = time.time()
-

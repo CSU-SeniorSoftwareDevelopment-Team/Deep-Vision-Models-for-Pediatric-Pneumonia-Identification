@@ -55,6 +55,14 @@ class Backend(object):
         
         self.threshold = 70 # threshold for error
 
+
+        # ---------------------------------------------------------
+        # VARs
+        # ---------------------------------------------------------
+
+        self.Processing = False
+
+
         # ---------------------------------------------------------
         # FILE PATHS
         # ---------------------------------------------------------
@@ -229,7 +237,8 @@ class Backend(object):
 
 
 
-
+    def Update():
+        pass
 
 
 
@@ -288,6 +297,7 @@ class Backend(object):
     Predict images from network buffer
     '''
     def predict_from_buffer(self, image_bytes):
+        self.Processing = True
         image_stream = io.BytesIO(image_bytes)
         image = Image.open(image_stream).convert("L")
 

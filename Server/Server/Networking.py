@@ -12,7 +12,7 @@ class Networking(object):
         self.backend                = backend      # Backend AI hookup 
 
 
-        self.IP                     = '0.0.0.0'     # LISTEN ON ALL INTERFACES (0.0.0.0) ( TEAM NOTE: Steven Andrews II )
+        self.IP                     = '100.105.179.38'     # LISTEN ON ALL INTERFACES (0.0.0.0) ( TEAM NOTE: Steven Andrews II )
         self.port                   = 8500          # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
         self.is_connected           = False         # indicator 
         self.is_running             = False         # indicator for the background thread
@@ -28,10 +28,9 @@ class Networking(object):
 
         # load approved users IP addresses ( i kinda hacked this one )
         # should be loaded via SQL or off disk and assembled at boot
-        user_manager.add_user( "steven"     , "1234", "127.0.0.1" ) # needs to be a vpn IP - no duplicates need to be here 
-        user_manager.add_user( "Bhavik"     , "1234", "127.0.0.1" )
-        user_manager.add_user( "Jhonathan"  , "1234", "127.0.0.1" )
-        user_manager.add_user( "Ada"        , "1234", "127.0.0.1" )
+        #user_manager.add_user( "steven"     , "1234", "127.0.0.1" ) # needs to be a vpn IP - no duplicates need to be here 
+        user_manager.add_user( "Bhavik"     , "1234", "100.94.98.44" )
+
 
 
 
@@ -111,9 +110,7 @@ class Networking(object):
                 client_ip, client_port = addr
 
                 user_ = self.user_manager.getUserByIP(client_ip)
-                if user_:
-                   print("Valid IP!")
-                else :
+                if not user_:
                    print("Invalid IP detected")
                    continue # skip creating a listener thread 
 

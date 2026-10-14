@@ -56,9 +56,6 @@ def main_loop():
     # FRAME RATE SETTINGS
     # =========================================================================
     # These values are used for scheduling periodic application tasks.
-    #
-    # Tkinter's "after()" function is used instead of a manual while-loop.
-    # This allows Tkinter to maintain control of the main application thread.
 
 
     MED_FPS                 = 30
@@ -80,9 +77,6 @@ def main_loop():
     # =========================================================================
     ''' The application creates the major components here and passes the
      dependencies into the classes that need them. Easier for testing and debugging this way.
-    
-     Backend:
-         Handles the neural network, datasets, training, and predictions.
     
      Frontend:
          Handles the GUI and user interaction.

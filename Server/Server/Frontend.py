@@ -98,7 +98,7 @@ class Frontend:
     '''
     def update_network_status_loop(self):
 
-        if self.network and self.network.is_connected:
+        if self.network and self.network.is_running:
             self.net_indicator.itemconfig(self.net_dot, fill="green")
         else:
             self.net_indicator.itemconfig(self.net_dot, fill="red")
