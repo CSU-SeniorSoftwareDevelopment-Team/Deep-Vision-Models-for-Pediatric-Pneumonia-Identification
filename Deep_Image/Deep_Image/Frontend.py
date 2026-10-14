@@ -37,7 +37,7 @@ class Frontend:
         self.create_indicator_bar()
 
         # Initialize tracking frames using the explicitly imported class targets
-        # Ensure your custom Dashboard view is listed here once extracted into its own file
+        # Ensure custom Dashboard view is listed here once extracted into its own file
         for PageClass in (LoginPage, DashboardPage): 
             page_name = PageClass.__name__
             frame = PageClass(parent=self.container, controller=self)
@@ -94,14 +94,17 @@ class Frontend:
         # test auto send login attemot 
         credentials = f"{username}:{password}"
         self.network.send_packet(MsgType.LOGIN, credentials.encode('utf-8'))
-  
 
     def trigger_logoff(self):
         # Redirect the frontend viewport back to the LoginPage frame array
         credentials = ""
         self.network.send_packet(MsgType.LOGOUT, credentials.encode('utf-8'))
+        self.inDash = False
         self.show_page("LoginPage")
-    
+        
+
+
+
     '''
     Load an image from Disc 
     '''
@@ -149,11 +152,18 @@ class Frontend:
     def update(self):
         if self.network.is_loggedin == True and self.inDash == False :
            self.show_page("DashboardPage")
+           self.inDash  = True
+           # indicator 
         if self.network and self.network.is_connected:
             self.net_indicator.itemconfig(self.net_dot, fill="green")
         else:
             self.net_indicator.itemconfig(self.net_dot, fill="red")
-
+        # forced logout
+        if self.network.forcedLogOut == True:
+           self.show_page("LoginPage") # kick user offline 
+           self.network.forcedLogOut = False
+           self.inDash = False
+           
 
 
 

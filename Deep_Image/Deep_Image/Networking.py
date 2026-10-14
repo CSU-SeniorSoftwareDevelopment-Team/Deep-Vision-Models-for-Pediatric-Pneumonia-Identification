@@ -19,7 +19,7 @@ class Networking(object):
         self.keepalive_time         = 5000          # Time in seconds before sending the first keep-alive probe
         self.keepalive_interval     = 1000          # Time in seconds between keep-alive probes
         self.soc                    = None          # socket object for the connection
-
+        self.forcedLogOut           = False
         # start a timer
 
         self.current_time = time.time() 
@@ -231,6 +231,11 @@ class Networking(object):
         response = payload.decode('utf-8')
         if response == "OK":
             self.is_loggedin = False
+        if response == "Force":
+            print("forced logout detected")
+            self.forcedLogOut = True
+            self.is_loggedin = False
+
 
     def handle_image_payload(self,payload):
         response = payload.decode('utf-8')

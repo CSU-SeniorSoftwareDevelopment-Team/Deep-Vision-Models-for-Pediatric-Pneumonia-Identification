@@ -12,5 +12,5 @@ class User():
         self.idelTick       = 0  
 
         self.loggedin = False
-
+        self.soc = None
 

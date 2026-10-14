@@ -22,13 +22,13 @@ class Networking(object):
         self.keepalive_time         = 5000          # Time in seconds before sending the first keep-alive probe
         self.keepalive_interval     = 1000          # Time in seconds between keep-alive probes
         self.connection_amount      = 10            # maximum number of connections allowed
-        self.UserTimeOut            = 10000
+        self.UserTimeOut            = 5000
         # start a timer
 
 
         # load approved users IP addresses ( i kinda hacked this one )
         # should be loaded via SQL or off disk and assembled at boot
-        user_manager.add_user( "steven"     , "1234", "127.0.0.1" )
+        user_manager.add_user( "steven"     , "1234", "127.0.0.1" ) # needs to be a vpn IP - no duplicates need to be here 
         user_manager.add_user( "Bhavik"     , "1234", "127.0.0.1" )
         user_manager.add_user( "Jhonathan"  , "1234", "127.0.0.1" )
         user_manager.add_user( "Ada"        , "1234", "127.0.0.1" )
@@ -117,6 +117,9 @@ class Networking(object):
                    print("Invalid IP detected")
                    continue # skip creating a listener thread 
 
+                # bind the soc to the user - this allows us to send data arbitraily 
+                user_.soc = secure_client_sock
+
                 # thread the client handler to allow multiple clients to connect simultaneously
                 client_thread = threading.Thread(
                     target=self.Handler, 
@@ -199,7 +202,11 @@ class Networking(object):
         except Exception:
             pass
 
-
+    '''
+        USer tracking data
+        parameters: 
+            bool_(boolean) = (false = remove, default = add)
+    '''
     def AddActiveUser(self,bool_ = True):
         if bool_ == True: 
             self.numberOfActiveUsers += 1
@@ -208,13 +215,96 @@ class Networking(object):
                 self.numberOfActiveUsers -= 1
         
 
+
+    '''
+        Forced logout - time out or security 
+            parameters: 
+                user - user object ( contains socket data and user state data )
+    '''
     def ForceLogout(self, user):
         self.AddActiveUser(False)
-        user.loggedin = False
         # tell the client that the server logged him out - this should force the client app
         # to bring them back to the login page 
-        response = f"OK"
-        self.send_packet(client_socket,MsgType.LOGOUT,response.encode('utf-8'))
+        response = f"Force"
+        if user.soc != None:
+            self.send_packet(user.soc,MsgType.LOGOUT,response.encode('utf-8'))
+        user.loggedin = False
+
+
+
+
+    '''
+    Payload Transmission: Wrapper for sending a packet to the client with the specified message type and payload.
+    '''
+    def send_packet(self, client_socket, msg_type: MsgType, payload_bytes: bytes):
+        if not self.is_running or not client_socket:
+            return False
+        try:
+            # Create the exact same 8-byte header the client expects
+            header = struct.pack('!II', msg_type, len(payload_bytes))
+            client_socket.sendall(header + payload_bytes)
+            return True
+        except (OSError, ConnectionError) as e:
+            print(f"Send failed to client: {e}")
+            return False
+
+
+
+
+    ''' enable_windows_keepalive:
+        Enables Windows Keep-Alives on a socket.
+        
+        Parameters: 
+        sock (socket.socket)        - The socket on which to enable keep-alives.
+        
+        Returns: None
+    '''
+    def enable_windows_keepalive(self, sock ):
+        # Enable TCP keep-alive
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        sock.ioctl(socket.SIO_KEEPALIVE_VALS, (1, self.keepalive_time, self.keepalive_interval))
+
+
+
+
+
+    ''' extractParts: Extracts the header from packet data 
+    Parameters:     num_bytes (int) - The number of bytes to extract from the socket.
+                    Sock (socket) - The socket object from which to extract the bytes.
+
+    Returns:        bytes - The extracted bytes from the socket, or None if the connection is closed.
+    '''
+    def extractParts(self,sock, num_bytes):
+        buffer = bytearray()
+        while len(buffer) < num_bytes:
+            packet = sock.recv(num_bytes - len(buffer))
+            if not packet:
+                return None
+            buffer.extend(packet)
+        return bytes(buffer)
+
+
+
+
+    '''
+        update: 
+        Internal clock for the networking class to check its internal state for periodic checks, chamges, and logic.
+        This function is locked by the scheduler to 30 FPS 
+
+        Parameters: None
+        Returns: None
+    '''
+    def Update(self):
+       
+        # force user to logout if inactive for 5.5 min straight ( User security )
+        for user_ in self.user_manager.users.values():
+            user_.idelTick += 1
+            if user_.idelTick > self.UserTimeOut:
+                self.ForceLogout(user_)
+                user_.idelTick  = 0
+
+
+
 
     #==============================================================================
     # APPLICATION PROTOCOL LAYER
@@ -262,73 +352,3 @@ class Networking(object):
          response = f"OK:{label}:{confidence}"
          self.send_packet(client_socket,MsgType.IMAGE,out_.encode('utf-8'))
          return True
-
-
-
-    '''
-    Payload Transmission: Wrapper for sending a packet to the client with the specified message type and payload.
-    '''
-    def send_packet(self, client_socket, msg_type: MsgType, payload_bytes: bytes):
-        if not self.is_running or not client_socket:
-            return False
-        try:
-            # Create the exact same 8-byte header the client expects
-            header = struct.pack('!II', msg_type, len(payload_bytes))
-            client_socket.sendall(header + payload_bytes)
-            return True
-        except (OSError, ConnectionError) as e:
-            print(f"Send failed to client: {e}")
-            return False
-
-
-
-
-    ''' enable_windows_keepalive:
-        Enables Windows Keep-Alives on a socket.
-        
-        Parameters: 
-        sock (socket.socket)        - The socket on which to enable keep-alives.
-        
-        Returns: None
-    '''
-    def enable_windows_keepalive(self, sock ):
-        # Enable TCP keep-alive
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        sock.ioctl(socket.SIO_KEEPALIVE_VALS, (1, self.keepalive_time, self.keepalive_interval))
-
-
-
-
-    ''' extractParts: Extracts the header from packet data 
-    Parameters:     num_bytes (int) - The number of bytes to extract from the socket.
-                    Sock (socket) - The socket object from which to extract the bytes.
-
-    Returns:        bytes - The extracted bytes from the socket, or None if the connection is closed.
-    '''
-    def extractParts(self,sock, num_bytes):
-        buffer = bytearray()
-        while len(buffer) < num_bytes:
-            packet = sock.recv(num_bytes - len(buffer))
-            if not packet:
-                return None
-            buffer.extend(packet)
-        return bytes(buffer)
-
-
-
-    '''
-        update: 
-        Internal clock for the networking class to check its internal state for periodic checks, chamges, and logic.
-        This function is locked by the scheduler to 30 FPS 
-
-        Parameters: None
-        Returns: None
-    '''
-    def Update(self):
-       
-        # force user to logout if inactive for 5.5 min straight ( User security )
-        for user_ in self.user_manager.users.values():
-            user_.idelTick += 1
-            if user_.idelTick > self.UserTimeOut:
-                self.ForceLogout()
-                user_.idelTick  = 0
