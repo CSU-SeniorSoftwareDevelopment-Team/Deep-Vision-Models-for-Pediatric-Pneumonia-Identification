@@ -8,6 +8,7 @@ from protocol import MsgType
 '''
 CLIENT SIDE NETWORKING:
 TCP-TLS Client side communication for low speed applications 
+
 '''
 class Networking(object):
     def __init__(self):
@@ -143,6 +144,7 @@ class Networking(object):
                 # if data = b"" then the connection is dead 
                 self.is_running     = False # reset state tracking 
                 self.is_connected   = False 
+                self.forcedLogOut   = True  # reset/force frontend to login page 
                 return None  # Connection closed
             buffer.extend(packet)
         return bytes(buffer) # Return the extracted bytes as a bytes object

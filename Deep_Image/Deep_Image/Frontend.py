@@ -163,6 +163,7 @@ class Frontend:
            self.show_page("LoginPage") # kick user offline 
            self.network.forcedLogOut = False
            self.inDash = False
+
            
 
 
