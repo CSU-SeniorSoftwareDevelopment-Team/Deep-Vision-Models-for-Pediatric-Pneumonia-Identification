@@ -6,23 +6,53 @@ import time
 from protocol import MsgType
 
 '''
-CLIENT SIDE NETWORKING:
-TCP-TLS Client side communication for low speed applications 
-
+# =========================================================================================
+# AUTHOR:       Steven Andrews II
+# ARCHITECTURE: Distributed IoT Client (VPN Endpoint)
+# SECURITY:     TLS 1.3 / Private Root CA Validation (Zero-Trust Model)
+# 
+# ----------------------------------- 
+# TECHNICAL IMPLEMENTATION OUTLINE:
+# ----------------------------------- 
+#   1-  SECURE INITIALIZATION: 
+#       >   Configures a high-security default client context enforcing
+#           strict certificate verification modes while safely bypassing domain hostname checking
+#   
+#   2-  ZERO-TRUST ROOT VERIFICATION: 
+#      
+#       >   Mandates a local 'root_ca.crt' file. Authenticates 
+#           the server by validating its dynamic over-the-air leaf certificate signature against 
+#           the permanent master Root CA trust stamp
+#   
+#   3- NETWORK HEALTH PROBE:
+#     
+#       >   Applies low-level Windows TCP Keep-Alives to the raw socket 
+#           BEFORE wrapping with SSL to ensure the TLS engine propagates idle tunnel persistence
+#   
+#   4- ERROR HANDLING: 
+#      
+#       >   Intercepts network dropouts and bad certificate alerts to close 
+#           sockets cleanly and protect local medical application memory
+# =========================================================================================
 '''
+
 class Networking(object):
     def __init__(self):
         #self.IP                     = '100.105.179.38'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
         self.IP                     = '127.0.0.1'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
 
         self.port                   = 8500               # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
-        self.is_connected           = False              # indicator 
-        self.is_loggedin            = False
-        self.is_running             = False              # indicator for the background thread
         self.keepalive_time         = 5000               # Time in seconds before sending the first keep-alive probe
         self.keepalive_interval     = 1000               # Time in seconds between keep-alive probes
         self.soc                    = None               # socket object for the connection
+ 
+        # state and toggles 
+        self.is_connected           = False              # indicator 
+        self.is_loggedin            = False
+        self.is_running             = False              # indicator for the background thread
         self.forcedLogOut           = False
+
+
         # start a timer
 
         self.current_time = time.time() 
@@ -39,21 +69,29 @@ class Networking(object):
         """Creates the connection and spools the monitor loop onto a background thread."""
         context                     = ssl.create_default_context()
         context.check_hostname      = False
-        context.verify_mode         = ssl.CERT_NONE  # Bypass verification for self-signed test certs
+
+        context.verify_mode         = ssl.CERT_REQUIRED # Update: cert is required - trusted server connection only / protects users 
+
+       
+        # load the shared cert file of the server 
+        # Root CA cert never changes and is used to check the server certifications 
+        # Client verifies if the server is safe - server checks IP agaist white list and User data 
+        try:
+            context.load_verify_locations(cafile="root_ca.crt")
+        except FileNotFoundError:
+            print("CRITICAL: 'server.crt' file is missing on the client. Cannot connect securely.")
+            return False
+
 
         try:
-            # Note: Steven Andrews II - This is a critical step to ensure that the connection 
-            # remains alive even if the application is idle for a long time
-            #-------------------------------------------------------------------------------------------
-            # create raw socket and apply Windows Keep-Alives
-            # Wrap the raw socket with SSL context to create a secure connection
-            #
-            # enable Windows Keep-Alives on the raw socket before wrapping it with SSL 
-            # - this is important because the SSL layer will not propagate the keep-alive settings to the socket without this step!
+            # Note: Steven Andrews II - Apply Windows Keep-Alives to the raw socket 
+            # BEFORE wrapping with SSL, or the TLS layer will block the settings.
+            # Prevents idle connection dropouts during long periods of inactivity on the socket 
+            # >> time out is handled at the application layer 
             raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.enable_windows_keepalive(raw_socket)
 
-            self.soc = context.wrap_socket(raw_socket, server_hostname=self.IP)
+            self.soc = context.wrap_socket(raw_socket, server_hostname=None)
             self.soc.connect((self.IP, self.port))
 
             self.is_connected = True
@@ -107,7 +145,7 @@ class Networking(object):
                 # update connection state
                 self.is_connected = True
               
-            # Edge cases ( i hate this part update it later ) - useful for debugging and testing the connection state
+            # Edge cases - we need to hande this with loggers and such for backend data collections in a real application - Steven 
             except (ConnectionResetError, ConnectionAbortedError, OSError):
                 print("Connection State: Disconnected (Connection forcibly reset/lost)")
                 self.is_connected = False

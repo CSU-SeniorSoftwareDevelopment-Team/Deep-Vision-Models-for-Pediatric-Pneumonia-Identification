@@ -6,6 +6,35 @@ import time
 # backend imports
 from protocol import MsgType
 
+'''
+# =========================================================================================
+# AUTHOR:       Steven Andrews II
+# ARCHITECTURE: Secure Hybrid Client-Server (Edge AI Installation)
+# SECURITY:     TLS 1.3 / Application-Layer IP Whitelisting (Dynamic VPN Optimized) [ Near production grade ] 
+#------------------------------------------
+# TECHNICAL IMPLEMENTATION OUTLINE:
+#------------------------------------------
+#
+#   1- CORE LISTENER ENGINE: 
+#           Spools an asynchronous multi-threaded TCP socket loop 
+#           onto a dedicated background daemon thread with port reuse enabled
+#   
+#   2- INBOUND NETWORK FILTRATION:
+#           a. Socket-Level Health: Injects native Windows TCP Keep-Alives into raw sockets
+#           b. Cryptographic Handshake: Wraps incoming sockets using an open TLS context
+#           c. Network Layer Whitelisting: Rejects and immediately closes unauthorized 
+#              IP addresses using an internal UserManager lookup to prevent leaks ( white listed IPs )
+#   
+#   3- HIGH-AVAILABILITY ROTATION: 
+#           Supports thread-safe, atomic certificate swapping 
+#           live via memory context updates without dropping the main listener thread
+#
+#   4- APPLICATION PROTOCOL LAYER: 
+#           Supports quick protocol additions and set up / state tracking 
+# =========================================================================================
+'''
+
+
 class Networking(object):
     def __init__(self, backend , user_manager):
         self.user_manager           = user_manager # Dependency injection for user management
@@ -41,6 +70,7 @@ class Networking(object):
 
 
         self.current_time = time.time() 
+        self.context = None
         self.Start()
         print(" [Networking] Initialized")
 
@@ -64,18 +94,15 @@ class Networking(object):
             self.server_socket.bind((self.IP, self.port))
             self.server_socket.listen( self.connection_amount ) # maximum number of connections allowed
             
-            context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+            self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
             
-            # make sure server.crt and server.key files exist in your folder
-            # if you don't have them, in the files - this app will not work, crashing the server and client. 
-            # these should be generated using openssl or a similar tool : 
-            # tbh this should rotate every day or so, but for the sake of this demo, we will use a static cert and key.
-            # i think ill add a cert rotation system in the future, but for now, this is fine.
-            context.load_cert_chain(certfile="server.crt", keyfile="server.key")
-
+            # load cert and key 
+            # the client verifies the servers Cert / Server mode = none 
+            self.context.load_cert_chain(certfile="server.crt", keyfile="server.key")
+            self.context.verify_mode = ssl.CERT_NONE 
             
             # spool the main listener loop onto a background thread
-            listener_thread = threading.Thread(target=self.Listener, args=(context,), daemon=True)
+            listener_thread = threading.Thread(target=self.Listener, args=(self.context,), daemon=True)
             listener_thread.start()
             self.is_running = True # running indicator for the background thread
             
@@ -106,10 +133,15 @@ class Networking(object):
                 self.enable_windows_keepalive(raw_client_sock)
                 
                 # TLS secure handshake
-                secure_client_sock = context.wrap_socket(
-                                                            raw_client_sock,
-                                                            server_side      =True
-                                                         )
+                try: 
+                    secure_client_sock = context.wrap_socket(
+                                                                raw_client_sock,
+                                                                server_side=True
+                                                             )
+                except Exception as tls_err:
+                    print(f"TLS Handshake failed from {addr}: {tls_err}")
+                    raw_client_sock.close()
+                    continue
                 
                 # check user IP white list 
                 # search through users 
