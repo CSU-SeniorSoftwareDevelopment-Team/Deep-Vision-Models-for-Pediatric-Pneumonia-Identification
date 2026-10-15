@@ -11,7 +11,9 @@ TCP-TLS Client side communication for low speed applications
 '''
 class Networking(object):
     def __init__(self):
-        self.IP                     = '100.105.179.38'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
+        #self.IP                     = '100.105.179.38'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
+        self.IP                     = '127.0.0.1'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
+
         self.port                   = 8500               # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
         self.is_connected           = False              # indicator 
         self.is_loggedin            = False
@@ -126,6 +128,8 @@ class Networking(object):
 
 
 
+
+
     ''' extractParts: Extracts the header from packet data 
     Parameters: num_bytes (int) - The number of bytes to extract from the socket.
     Returns: bytes - The extracted bytes from the socket, or None if the connection is closed.
@@ -136,9 +140,14 @@ class Networking(object):
 
             packet = self.soc.recv(num_bytes - len(buffer))
             if not packet:
+                # if data = b"" then the connection is dead 
+                self.is_running     = False # reset state tracking 
+                self.is_connected   = False 
                 return None  # Connection closed
             buffer.extend(packet)
         return bytes(buffer) # Return the extracted bytes as a bytes object
+
+
 
 
 
@@ -165,6 +174,8 @@ class Networking(object):
 
 
 
+
+
     ''' enable_windows_keepalive:
         Enables Windows Keep-Alives on a socket.
         
@@ -177,6 +188,8 @@ class Networking(object):
         # Enable TCP keep-alive
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.ioctl(socket.SIO_KEEPALIVE_VALS, (1, self.keepalive_time, self.keepalive_interval))
+
+
 
 
 
@@ -205,9 +218,7 @@ class Networking(object):
 
 
 
-    def handle_image_payload(self,payload):
-        response = payload.decode('utf-8')
-        print(response)
+
 
     '''
         update: 
@@ -265,3 +276,9 @@ class Networking(object):
             print("forced logout detected")
             self.forcedLogOut = True
             self.is_loggedin = False
+
+    
+    def handle_image_payload(self,payload):
+        response = payload.decode('utf-8')
+        print(response)
+

@@ -12,7 +12,8 @@ class Networking(object):
         self.backend                = backend      # Backend AI hookup 
 
 
-        self.IP                     = '100.105.179.38'     # LISTEN ON ALL INTERFACES (0.0.0.0) ( TEAM NOTE: Steven Andrews II )
+        #self.IP                     = '100.105.179.38'     # LISTEN ON ALL INTERFACES (0.0.0.0) ( TEAM NOTE: Steven Andrews II )
+        self.IP                     = '0.0.0.0'     # LISTEN ON ALL INTERFACES (0.0.0.0) ( TEAM NOTE: Steven Andrews II )
         self.port                   = 8500          # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
         self.is_connected           = False         # indicator 
         self.is_running             = False         # indicator for the background thread
@@ -28,9 +29,14 @@ class Networking(object):
 
         # load approved users IP addresses ( i kinda hacked this one )
         # should be loaded via SQL or off disk and assembled at boot
-        #user_manager.add_user( "steven"     , "1234", "127.0.0.1" ) # needs to be a vpn IP - no duplicates need to be here 
-        user_manager.add_user( "Bhavik"     , "1234", "100.94.98.44" )
 
+
+        # LOCAL HOST TEST
+        user_manager.add_user( "Test"     , "1234", "127.0.0.1")
+
+        # UNCOMMENT TO RUN VIA VPN
+        #user_manager.add_user( "Bhavik"     , "1234", "100.94.98.44" )
+        #user_manager.add_user( "Jonathan"   , "1234", "100.95.134.64" )
 
 
 
@@ -225,7 +231,10 @@ class Networking(object):
         response = f"Force"
         if user.soc != None:
             self.send_packet(user.soc,MsgType.LOGOUT,response.encode('utf-8'))
+            user.soc.close()
         user.loggedin = False
+
+
 
 
 
