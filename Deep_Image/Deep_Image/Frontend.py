@@ -1,11 +1,6 @@
 
-import tkinter as tk
-from tkinter import filedialog, messagebox
-from PIL import Image, ImageTk
 import threading
-
 import tkinter as tk
-from tkinter import messagebox
 from protocol import MsgType
 
 # PAGES - window views for UI 

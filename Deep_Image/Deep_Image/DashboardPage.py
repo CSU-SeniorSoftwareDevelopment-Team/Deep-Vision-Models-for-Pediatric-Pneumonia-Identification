@@ -33,7 +33,7 @@ class DashboardPage(tk.Frame):
 
         
         # IMAGE VIEWPORT
-        self.canvas_w = 500
+        self.canvas_w = 500 # setting 
         self.canvas_h = 350
         self.image_canvas = tk.Canvas(
             self, width=self.canvas_w, height=self.canvas_h, 
