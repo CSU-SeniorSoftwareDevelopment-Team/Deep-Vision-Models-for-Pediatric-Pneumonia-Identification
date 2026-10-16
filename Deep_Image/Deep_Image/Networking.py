@@ -48,10 +48,10 @@ class Networking(object):
         self.soc                    = None               # socket object for the connection
  
         # state and toggles 
-        self.is_connected           = False              # indicator 
-        self.is_loggedin            = False
-        self.is_running             = False              # indicator for the background thread
-        self.forcedLogOut           = False
+        self.is_connected           = False              # Netwrok service indicator / is connected to TCP soc
+        self.is_loggedin            = False              # is user logged in / login accepted 
+        self.is_running             = False              # Master netwrok indicator 
+        self.forcedLogOut           = False              # Forces the logout to login page ( frontend toggle )
 
 
         # start a timer
@@ -143,7 +143,7 @@ class Networking(object):
                 # parse data based on the message type and payload
                 self.process_message(msg_type, payload)
 
-                # update connection state
+                # update connection state - data was processed 
                 self.is_connected = True
               
             # Edge cases - we need to hande this with loggers and such for backend data collections in a real application - Steven 
@@ -314,7 +314,6 @@ class Networking(object):
         if response == "OK":
             self.is_loggedin = False
         if response == "Force":
-            print("forced logout detected")
             self.forcedLogOut = True
             self.is_loggedin = False
 
