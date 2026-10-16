@@ -139,6 +139,64 @@ class Frontend:
 
 
 
+    def load_image(self):
+
+        file_path = filedialog.askopenfilename(
+            title="Select X-Ray Image",
+            filetypes=[
+                (
+                    "Image Files",
+                    "*.jpg *.jpeg *.png *.bmp"
+                ),
+                (
+                    "All Files",
+                    "*.*"
+                )
+            ]
+        )
+
+        # wser cancelled the file dialog.
+        if not file_path:
+            return
+
+        # Store the selected path so the prediction function can
+        # later pass the same file to the backend.
+        self.image_path = file_path
+        
+        # load image using PIL
+
+        image = Image.open(
+            file_path
+        )
+
+        # RESIZE IMAGE - make it big 
+        # *( this is funky and cant be done in the backend because the backend is not aware of the UI )
+
+        image.thumbnail((699, 481))
+
+        # ---------------------------------------------------------
+        # TKINTER IMAGE CONVERSION
+        # ---------------------------------------------------------
+        # Tkinter cannot directly display a PIL Image object.
+        # ImageTk.PhotoImage converts it into a format Tkinter can
+        # render tho
+        # ---------------------------------------------------------
+
+        self.display_image = ImageTk.PhotoImage(
+            image
+        )
+
+        # Replace the "No image loaded" text with the selected image.
+        self.image_window.config(
+            image=self.display_image,
+            text=""
+        )
+
+
+
+
+
+
     '''
     Boot: Starts the Tkinter main event loop, allowing the GUI to run and respond to user interactions.
     '''
@@ -171,7 +229,7 @@ class Frontend:
 
 
 
-'''
+'''old stuff not used: good for refernece  - origonal build of the UI 
 class Frontend:
 
     def __init__(self, root, backend_, network_):

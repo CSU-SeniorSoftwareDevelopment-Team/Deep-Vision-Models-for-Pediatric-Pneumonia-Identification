@@ -28,6 +28,7 @@ from protocol import MsgType
 #     
 #       >   Applies low-level Windows TCP Keep-Alives to the raw socket 
 #           BEFORE wrapping with SSL to ensure the TLS engine propagates idle tunnel persistence
+        >   Monitors server / connection state 
 #   
 #   4- ERROR HANDLING: 
 #      
