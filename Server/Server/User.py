@@ -26,17 +26,19 @@ class User():
 
     # Safe wrappers for username, password, IP changes
     def ChangeName(self, name_):
-        if self.username == str(name_):
+        cleaned_name = str(name_).strip()
+        if self.username == cleaned_name:
             return False
-        self.username = name_.strip().title().lower()
+        self.username = cleaned_name.title()
         return True
 
 
 
     def ChangePassword(self, pass_):
-        if self.password == str(pass_):
+        new_password = str(pass_)
+        if self.password == new_password:
             return False
-        self.password = pass_.strip().title().lower()
+        self.password = new_password
         return True
 
 
