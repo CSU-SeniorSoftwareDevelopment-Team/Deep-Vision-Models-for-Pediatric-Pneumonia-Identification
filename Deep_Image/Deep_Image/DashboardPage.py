@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
+from sympy import cancel
 from protocol import MsgType
 '''
 Pages are the individual views that the user sees in the GUI.
@@ -70,6 +71,18 @@ class DashboardPage(tk.Frame):
         )
         # Use side="left" and padx to separate them horizontally
         Send_btn.pack(side="left", padx=10)
+
+
+        cancel_btn = tk.Button(
+            button_frame,  
+            text="Cancel:", 
+            bg="#2e7d32", 
+            fg="white", 
+            font=("Arial", 11, "bold"), 
+            command=self.Cancel
+        )
+        # Use side="left" and padx to separate them horizontally
+        cancel_btn.pack(side="left", padx=10)
  
     # ----------------------------------------
     # Helpers
@@ -84,6 +97,12 @@ class DashboardPage(tk.Frame):
                                                self.currentImageBytes
                                             )
         
+
+
+    def Cancel(self):
+        self.currentImageBytes == None
+        self.image_canvas.delete("all")
+
 
 
     def load_image(self):
