@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
-
+from protocol import MsgType
 '''
 Pages are the individual views that the user sees in the GUI.
 Each page is a subclass of tk.Frame and is responsible for its own layout and functionality.
@@ -64,6 +64,31 @@ class DashboardPage(tk.Frame):
         try:
             # Load image using Pillow
             pil_image = Image.open(file_path)
+
+
+
+
+            user_choice = messagebox.askokcancel(
+                title="Confirm Action:", message="Send for Processing?"
+            )
+
+            if user_choice:  # True
+
+                fb_ = None
+                with open(file_path, "rb") as f:
+                    fb_ = f.read()
+            
+                if fb_ != None:
+                     self.controller.network.send_packet(
+                     MsgType.IMAGE,
+                     fb_
+                     )
+                
+            else:  # False
+                print("User clicked Cancel. Aborting NET send...")
+
+
+
            
             # Defined above in the __init__ 
             pil_image.thumbnail((self.canvas_w, self.canvas_h))
@@ -81,5 +106,10 @@ class DashboardPage(tk.Frame):
             self.image_canvas.image = tk_image
             print(f"Successfully loaded and displayed: {file_path}")
             
+   
+
+           
+
+
         except Exception as e:
             print(f"Error loading image: {e}")

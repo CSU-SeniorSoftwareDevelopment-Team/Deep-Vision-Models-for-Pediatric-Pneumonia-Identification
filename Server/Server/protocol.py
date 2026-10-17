@@ -1,6 +1,4 @@
 from enum import IntEnum
-
-
 '''
 Incoming message mapping / expected values:
 '''

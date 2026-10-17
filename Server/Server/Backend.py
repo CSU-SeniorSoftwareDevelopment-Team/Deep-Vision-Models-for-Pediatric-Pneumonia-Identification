@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import time
-
+import io
 from pathlib import Path
 from PIL import Image
 
@@ -46,22 +46,23 @@ class Backend(object):
         # SETTINGS
         # ---------------------------------------------------------
 
-        self.epochs = 3
-        self.learning_rate = 0.001
-        self.batch_size = 32
+        self.epochs             = 3
+        self.learning_rate      = 0.001
+        self.batch_size         = 32
 
         # Print progress every N batches
-        self.print_every = 10
-        
-        self.threshold = 70 # threshold for error
+        self.print_every        = 10
+        self.threshold          = 70 # threshold for error
 
 
         # ---------------------------------------------------------
         # VARs
         # ---------------------------------------------------------
 
-        self.Processing = False
-
+        # progress / network data tracking 
+        self.Processing = False  # traffic indicator 
+        self.Training   = False  # should tell everyone on the network that the server may be busy 
+        
 
         # ---------------------------------------------------------
         # FILE PATHS
@@ -364,3 +365,17 @@ class Backend(object):
 
          
         return label, sum_/samples  # return the average confidence over 2 runs
+
+
+    # helper function to get the container 
+    def get_class_name(self, class_index):
+
+        idx_to_class = {
+            value: key
+            for key, value
+            in self.train_dataset.class_to_idx.items()
+        }
+
+        return idx_to_class[
+            class_index
+        ].upper()

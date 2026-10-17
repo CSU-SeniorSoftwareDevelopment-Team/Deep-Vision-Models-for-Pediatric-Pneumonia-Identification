@@ -103,13 +103,16 @@ class Frontend:
         else:
             self.net_indicator.itemconfig(self.net_dot, fill="red")
 
-        if self.backend and hasattr(self.backend, 'state'):
-            if self.backend.state == "PROCESSING":
-                self.state_indicator.itemconfig(self.state_dot, fill="yellow")
-            elif self.backend.state == "ERROR":
-                self.state_indicator.itemconfig(self.state_dot, fill="red")
-            else:
-                self.state_indicator.itemconfig(self.state_dot, fill="blue")
+
+        if self.backend.Training == True:
+             self.state_indicator.itemconfig(self.state_dot, fill="yellow")
+        else:
+             self.state_indicator.itemconfig(self.state_dot, fill="green")
+        # blip indicator
+        if self.backend.Processing == True:
+            self.state_indicator.itemconfig(self.state_dot, fill="blue")
+            self.backend.Processing = False
+
 
         self.root.after(200, self.update_network_status_loop)
 
@@ -131,7 +134,7 @@ class Frontend:
                return    
         messagebox.showerror("Error", "Failed to login to the server backend... ")
 
-
+       
 
 
     '''

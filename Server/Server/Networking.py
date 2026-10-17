@@ -57,7 +57,7 @@ class Networking(object):
 
 
         # load approved users IP addresses ( i kinda hacked this one )
-        # should be loaded via SQL or off disk and assembled at boot
+        # should be loaded via SQL or off disk from json and assembled at boot
 
 
         # LOCAL HOST TEST
@@ -79,8 +79,8 @@ class Networking(object):
 
 
     '''
-        Start: Starts the server and begins listening for incoming connections.
-        Returns: True if the server started successfully, False otherwise.
+        Start:      Starts the server and begins listening for incoming connections.
+        Returns:    True if the server started successfully, False otherwise.
     '''
     def Start(self):
         if self.is_running:
@@ -97,7 +97,7 @@ class Networking(object):
             self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
             
             # load cert and key 
-            # the client verifies the servers Cert / Server mode = none 
+            # the client verifies the servers Cert / do not check the cert from the client 
             self.context.load_cert_chain(certfile="server.crt", keyfile="server.key")
             self.context.verify_mode = ssl.CERT_NONE 
             
@@ -119,7 +119,10 @@ class Networking(object):
 
 
     '''
-        Listener: Listens for incoming connections and handles them in separate threads.
+        Listener: 
+                    Listens for incoming connections and handles them in separate 
+                    threads by spooling a thread per new connection 
+        
         Parameters: 
             context (ssl.SSLContext) - The SSL context for secure connections.
         Returns: None
@@ -146,13 +149,12 @@ class Networking(object):
                 # check user IP white list 
                 # search through users 
                 client_ip, client_port = addr
-
                 user_ = self.user_manager.getUserByIP(client_ip)
                 if not user_:
                    print("Invalid IP detected")
                    continue # skip creating a listener thread 
 
-                # bind the soc to the user - this allows us to send data arbitraily 
+                # bind the soc to the user - this allows us to send data arbitraily through the User object
                 user_.soc = secure_client_sock
 
                 # thread the client handler to allow multiple clients to connect simultaneously
@@ -196,17 +198,18 @@ class Networking(object):
                     msg_type = MsgType(raw_msg_type)
                 except ValueError:
                     print(f"Server received invalid message integer ({raw_msg_type}) from {client_ip}")
-                    self.extractParts(client_socket, payload_length) # Dump bad data - this works / keep it
-                    continue
+                    self.extractParts(client_socket, payload_length) # Dump bad data - read the rest of the buffer / clears it on read
+                    continue # fault tollerant 
                 
                 # Read exact expected packet payload size
                 payload = self.extractParts(client_socket, payload_length)
                 if payload is None:
                     print(f"Connection dropped during payload extraction from: {client_ip}")
-                    break
+                    break   # connection dropped
                 
                 #---------------------------------------------------------------------------------
-                # parse th commands using the shared enum protocols
+                # parse the commands using the shared enum protocols
+                #---------------------------------------------------------------------------------
                 if msg_type == MsgType.LOGIN:
                     print(f"Received LOGIN command from {client_ip}")
                     user_.idelTick = 0 # any new data resets the Idel ticks 
@@ -221,7 +224,7 @@ class Networking(object):
                     print(f"Received IMAGE data from {client_ip}, length: {payload_length} bytes")
                     user_.idelTick = 0 
                     self.RunImage(client_ip,client_socket,user_,payload)
-                    
+ 
                 #---------------------------------------------------------------------------------
 
             except (ConnectionResetError, ConnectionAbortedError, OSError):
@@ -334,7 +337,7 @@ class Networking(object):
     '''
     def Update(self):
        
-        # force user to logout if inactive for 5.5 min straight ( User security )
+        # force user to logout if inactive for (UserTimeOut) min ( User security )
         for user_ in self.user_manager.users.values():
             user_.idelTick += 1
             if user_.idelTick > self.UserTimeOut:
@@ -388,5 +391,5 @@ class Networking(object):
          # grab results and pass them back 
          label, confidence  = self.backend.predict_from_buffer(payload)
          response = f"OK:{label}:{confidence}"
-         self.send_packet(client_socket,MsgType.IMAGE,out_.encode('utf-8'))
+         self.send_packet(client_socket,MsgType.IMAGE,response.encode('utf-8'))
          return True

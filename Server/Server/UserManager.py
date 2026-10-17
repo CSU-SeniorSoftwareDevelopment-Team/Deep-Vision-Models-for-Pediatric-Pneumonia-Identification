@@ -19,12 +19,14 @@ class UserManager(object):
     
     return: True if the user was added successfully, False if the user already exists.
     '''
-    def add_user(self, username, password, ip ):
+    def add_user(self, username, password, ip , isManager = False):
        if username in self.users:
               print(f"User {username} already exists.")
               return False
         
-       self.users[username] = User.User(username, password, ip)
+       self.users[username] = User.User(username, password, ip , isManager)
+
+
        return True
 
 
@@ -46,6 +48,7 @@ class UserManager(object):
             return False
 
 
+     
     def get_user(self, name):
         return self.users.get(name, None)
 
