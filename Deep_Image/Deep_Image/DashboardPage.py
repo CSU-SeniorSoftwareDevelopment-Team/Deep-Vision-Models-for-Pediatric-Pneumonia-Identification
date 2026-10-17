@@ -73,7 +73,7 @@ class DashboardPage(tk.Frame):
         Send_btn.pack(side="left", padx=10)
 
 
-        cancel_btn = tk.Button(
+        cancel_btn = tk.Button( 
             button_frame,  
             text="Cancel:", 
             bg="#2e7d32", 
