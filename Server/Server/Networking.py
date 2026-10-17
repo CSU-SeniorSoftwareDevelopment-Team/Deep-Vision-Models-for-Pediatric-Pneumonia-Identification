@@ -241,7 +241,7 @@ class Networking(object):
             pass
 
     '''
-        USer tracking data
+        User tracking data
         parameters: 
             bool_(boolean) = (false = remove, default = add)
     '''
@@ -267,6 +267,7 @@ class Networking(object):
         if user.soc != None:
             self.send_packet(user.soc,MsgType.LOGOUT,response.encode('utf-8'))
             user.soc.close()
+        user.clearLog() # clear local logs 
         user.loggedin = False
 
 
@@ -376,6 +377,7 @@ class Networking(object):
             user_.loggedin = False
             response = f"OK"
             self.send_packet(client_socket,MsgType.LOGOUT,response.encode('utf-8'))
+            user_.clearLog() # clear local change logs
             print(f"Logout requested")
             return True
         else:

@@ -14,7 +14,7 @@ class Frontend:
         self.root.title("DeepImage - Server")
         self.root.geometry("900x700")
 
-        # i need to move this to the backend eventually - no touchy 
+        # i need to move this to the backend eventually - no touchy -or users
         self.system_ID              = "12345"
         self.system_password        = "54321"
 
@@ -35,7 +35,8 @@ class Frontend:
         self.create_indicator_bar()
 
         # Initialize tracking frames using the explicitly imported class targets
-        # Ensure your custom Dashboard view is listed here once extracted into its own file
+        # Ensure custom Dashboard view is listed here once extracted into its own file
+        # add pages here
         for PageClass in (LoginPage, DashboardPage): 
             page_name = PageClass.__name__
             frame = PageClass(parent=self.container, controller=self)
