@@ -1,13 +1,13 @@
 
 import threading
 import tkinter as tk
-from protocol import MsgType
+from NET.protocol import MsgType
 
 # PAGES - window views for UI 
 # see internal documentation for details on how to extract these tho
-from LoginPage import LoginPage
-from DashboardPage import DashboardPage 
-from SettingsPage import SettingsPage 
+from UI.Pages.LoginPage import LoginPage
+from UI.Pages.DashboardPage import DashboardPage 
+from UI.Pages.SettingsPage import SettingsPage 
 
 class Frontend:
     def __init__(self, root, network_):

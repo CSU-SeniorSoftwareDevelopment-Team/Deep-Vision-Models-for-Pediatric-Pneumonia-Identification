@@ -3,7 +3,7 @@ import ssl
 import threading 
 import struct  
 import time
-from protocol import MsgType
+from NET.protocol import MsgType
 
 '''
 # =========================================================================================
@@ -78,9 +78,9 @@ class Networking(object):
         # Root CA cert never changes and is used to check the server certifications 
         # Client verifies if the server is safe - server checks IP agaist white list and User data 
         try:
-            context.load_verify_locations(cafile="root_ca.crt")
+            context.load_verify_locations(cafile="NET/Certification/root_ca.crt")
         except FileNotFoundError:
-            print("CRITICAL: 'server.crt' file is missing on the client. Cannot connect securely.")
+            print("CRITICAL: 'root_ca.crt' file is missing on the client. Cannot connect securely.")
             return False
 
 

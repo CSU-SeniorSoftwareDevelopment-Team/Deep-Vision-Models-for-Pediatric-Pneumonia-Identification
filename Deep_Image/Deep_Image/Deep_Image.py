@@ -47,8 +47,8 @@ import tkinter as tk
 
 # Backend Dependencies
 import Backend
-import Frontend
-import Networking
+from UI.Frontend import Frontend
+from NET.Networking import Networking
 
 def main_loop():
 
@@ -92,15 +92,13 @@ def main_loop():
     root = tk.Tk()
 
        
-    network = Networking.Networking() 
+    network = Networking()
 
     # Frontend injected with root, backend, and network dependencies
-    frontend = Frontend.Frontend(
+    frontend = Frontend(
         root,
         network
     )
-
-
 
 
     # =========================================================================

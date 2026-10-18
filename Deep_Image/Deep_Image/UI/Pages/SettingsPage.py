@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
 from sympy import cancel
-from protocol import MsgType
+from NET.protocol import MsgType
 '''
 Pages are the individual views that the user sees in the GUI.
 Each page is a subclass of tk.Frame and is responsible for its own layout and functionality.

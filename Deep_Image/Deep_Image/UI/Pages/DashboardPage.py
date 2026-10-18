@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
 from sympy import cancel
-from protocol import MsgType
+from NET.protocol import MsgType
 '''
 Pages are the individual views that the user sees in the GUI.
 Each page is a subclass of tk.Frame and is responsible for its own layout and functionality.
@@ -136,18 +136,19 @@ class DashboardPage(tk.Frame):
                 title="Confirm Action:", message="Send for Processing?"
             )
 
+            # get bytes 
+            fb_ = None
+            with open(file_path, "rb") as f:
+                 fb_ = f.read()
+
             if user_choice: 
-                fb_ = None
-                with open(file_path, "rb") as f:
-                    fb_ = f.read()
-            
                 if fb_ != None:
                      self.currentImageBytes = fb_
-                     self.controller.network.send_packet( # see - networking class
-                                                             MsgType.IMAGE,
-                                                             fb_
-                                                        )
+                     self.controller.network.send_packet( # see networking class
+                                                         MsgType.IMAGE,
+                                                         fb_          )
             else:  
+                self.currentImageBytes = fb_ # saves it to current image bytes
                 print("User clicked Cancel. Aborting NET send...")
 
            

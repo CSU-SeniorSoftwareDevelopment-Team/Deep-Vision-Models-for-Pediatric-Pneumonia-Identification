@@ -1,0 +1,6 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+*.pyc
+/Deep_Image/Deep_Image/__pycache__/Backend.cpython-310.pyc
