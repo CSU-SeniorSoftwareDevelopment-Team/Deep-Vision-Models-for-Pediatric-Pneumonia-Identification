@@ -4,7 +4,7 @@ import threading
 import struct  
 import time
 # backend imports
-from protocol import MsgType
+from NET.protocol import MsgType
 
 '''
 # =========================================================================================
@@ -98,7 +98,7 @@ class Networking(object):
             
             # load cert and key 
             # the client verifies the servers Cert / do not check the cert from the client 
-            self.context.load_cert_chain(certfile="server.crt", keyfile="server.key")
+            self.context.load_cert_chain(certfile="NET/Certification/server.crt", keyfile="NET/Certification/server.key")
             self.context.verify_mode = ssl.CERT_NONE 
             
             # spool the main listener loop onto a background thread

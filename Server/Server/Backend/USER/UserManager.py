@@ -1,4 +1,4 @@
-import User
+from Backend.USER.User import User
 
 class UserManager(object):
     def __init__(self):
@@ -24,7 +24,7 @@ class UserManager(object):
               print(f"User {username} already exists.")
               return False
         
-       self.users[username] = User.User(username, password, ip , isManager)
+       self.users[username] = User(username, password, ip , isManager)
 
 
        return True

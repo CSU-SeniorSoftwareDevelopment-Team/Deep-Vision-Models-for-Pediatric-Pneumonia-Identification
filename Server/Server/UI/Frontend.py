@@ -1,11 +1,11 @@
 import tkinter as tk
 from tkinter import messagebox
-from protocol import MsgType
+from NET.protocol import MsgType
 
 # PAGES - window views for UI 
 # see internal documentation for details on how to extract these tho
-from LoginPage import LoginPage
-from DashboardPage import DashboardPage 
+from UI.Pages.LoginPage import LoginPage
+from UI.Pages.DashboardPage import DashboardPage 
 
 
 class Frontend:

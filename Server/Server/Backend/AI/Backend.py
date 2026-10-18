@@ -69,9 +69,10 @@ class Backend(object):
         # ---------------------------------------------------------
 
         BASE_DIR = Path(__file__).resolve().parent
+        IMAGEBASE = Path(__file__).resolve().parent.parent.parent
 
-        self.train_data_folder = BASE_DIR / "TRAINING_IMAGES"
-        self.test_data_folder = BASE_DIR / "TEST_IMAGES"
+        self.train_data_folder = IMAGEBASE / "TRAINING_IMAGES"
+        self.test_data_folder = IMAGEBASE / "TEST_IMAGES"
 
         print(f"\nTraining folder: {self.train_data_folder}")
         print(f"Testing folder:  {self.test_data_folder}")

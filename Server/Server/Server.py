@@ -53,10 +53,10 @@ import tkinter as tk
 
 
 # Backend Dependencies
-import Backend
-import Frontend
-import Networking
-import UserManager
+from Backend.AI.Backend import Backend
+from UI.Frontend import Frontend
+from NET.Networking import Networking
+from Backend.USER.UserManager import UserManager
 
 def main_loop():
     
@@ -110,14 +110,14 @@ def main_loop():
 
     root = tk.Tk()
 
-    user_manager    = UserManager.UserManager()
-    backend         = Backend.Backend()         
-    network         = Networking.Networking( backend,user_manager ) 
+    user_manager    = UserManager()
+    backend         = Backend()         
+    network         = Networking( backend,user_manager ) 
 
 
 
     # Frontend injected with root, backend, and network dependencies
-    frontend = Frontend.Frontend(
+    frontend = Frontend(
         root,
         backend,
         network
