@@ -7,14 +7,15 @@ from protocol import MsgType
 # see internal documentation for details on how to extract these tho
 from LoginPage import LoginPage
 from DashboardPage import DashboardPage 
-
+from SettingsPage import SettingsPage 
 
 class Frontend:
     def __init__(self, root, network_):
         self.root = root
         self.root.title("DeepImage - Server")
         self.root.geometry("900x700")
-        self.inDash = False
+        self.inDash             = False
+        self.insettingsPage     = False
 
         # Dependency injection
 
@@ -33,7 +34,7 @@ class Frontend:
 
         # Initialize tracking frames using the explicitly imported class targets
         # Ensure custom Dashboard view is listed here once extracted into its own file
-        for PageClass in (LoginPage, DashboardPage): 
+        for PageClass in (LoginPage, DashboardPage , SettingsPage): 
             page_name = PageClass.__name__
             frame = PageClass(parent=self.container, controller=self)
             self.pages[page_name] = frame
@@ -103,6 +104,17 @@ class Frontend:
         self.show_page("LoginPage")
         
 
+    def GotoSettingsPage(self):
+        if self.inDash == True: # is loged in and connected / short circuit check 
+            self.insettingsPage = True
+            self.show_page("SettingsPage")
+
+
+    def GoBacktoDash(self):
+        if self.inDash == True:
+             self.insettingsPage = False 
+             self.show_page("DashboardPage")
+     
 
 
     '''
@@ -119,6 +131,7 @@ class Frontend:
         if self.network.is_loggedin == True and self.inDash == False :
            self.show_page("DashboardPage")
            self.inDash  = True
+
            # indicator 
         if self.network and self.network.is_connected:
             self.net_indicator.itemconfig(self.net_dot, fill="green")
@@ -126,11 +139,10 @@ class Frontend:
             self.net_indicator.itemconfig(self.net_dot, fill="red")
         # forced logout
         if self.network.forcedLogOut == True:
+           self.inDash                  = False
+           self.insettingsPage          = False
+           self.network.forcedLogOut    = False
            self.show_page("LoginPage") # kick user offline 
-           self.network.forcedLogOut = False
-           self.inDash = False
-
-           
 
 
 

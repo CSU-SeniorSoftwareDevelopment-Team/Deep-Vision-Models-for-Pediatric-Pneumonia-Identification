@@ -20,7 +20,7 @@ class DashboardPage(tk.Frame):
         self.pack_propagate(False)   # Stops frames packed inside from resizing the window
         self.grid_propagate(False)   # Stops grid layouts from resizing the window
         
-        self.currentImageBytes = None
+        self.currentImageBytes = None # reset this to stop the send button from working on clear 
 
         #  WINDOW TITLE:
         self.title_label = tk.Label(self, text="Dashboard Workspace:", font=("Arial", 16))
@@ -83,10 +83,25 @@ class DashboardPage(tk.Frame):
         )
         # Use side="left" and padx to separate them horizontally
         cancel_btn.pack(side="left", padx=10)
+
+
+        settings_btn = tk.Button( 
+            button_frame,  
+            text="Settings:", 
+            bg="#2e7d32", 
+            fg="white", 
+            font=("Arial", 11, "bold"), 
+            command=self.controller.GotoSettingsPage
+        )
+        # Use side="left" and padx to separate them horizontally
+        settings_btn.pack(side="left", padx=30)
+
  
     # ----------------------------------------
     # Helpers
     #-----------------------------------------
+
+
 
     def Send(self):
         if self.currentImageBytes == None:
@@ -98,9 +113,8 @@ class DashboardPage(tk.Frame):
                                             )
         
 
-
     def Cancel(self):
-        self.currentImageBytes == None
+        self.currentImageBytes = None
         self.image_canvas.delete("all")
 
 

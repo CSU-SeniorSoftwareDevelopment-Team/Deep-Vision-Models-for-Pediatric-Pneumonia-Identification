@@ -33,3 +33,5 @@ class LoginPage(tk.Frame):
             command=lambda: self.controller.trigger_login_attempt(self.user_entry.get(), self.pass_entry.get())
         )
         login_btn.pack(pady=30)
+
+ 
