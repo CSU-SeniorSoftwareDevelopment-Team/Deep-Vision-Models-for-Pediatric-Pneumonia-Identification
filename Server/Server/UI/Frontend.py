@@ -13,6 +13,7 @@ class Frontend:
         self.root = root
         self.root.title("DeepImage - Server")
         self.root.geometry("900x700")
+        
 
         # i need to move this to the backend eventually - no touchy -or users
         self.system_ID              = "12345"
@@ -50,6 +51,31 @@ class Frontend:
         self.update_network_status_loop()
         print(" [Frontend] Initialized")
 
+
+
+    '''
+        MakeButton : Reduces the amount of code needed to produce a button 
+    '''
+    def MakeButton(self,parent, text, command, bg_color="#007bff", hover_color="#005cbf", click_color="#004085"):
+        btn = tk.Button(
+            parent,
+            text=text,
+            font=("Segoe UI", 11, "bold"),
+            bg=bg_color,
+            fg="#ffffff",
+            activebackground=click_color,
+            activeforeground="#ffffff",
+            relief="flat",
+            bd=0,
+            padx=20,
+            pady=10,
+            cursor="hand2",
+            command=command
+        )
+              # Bind explicit hover shifts
+        btn.bind("<Enter>", lambda e, b=btn, c=hover_color: b.config(bg=c))
+        btn.bind("<Leave>", lambda e, b=btn, c=bg_color: b.config(bg=c))
+        return btn
 
 
 

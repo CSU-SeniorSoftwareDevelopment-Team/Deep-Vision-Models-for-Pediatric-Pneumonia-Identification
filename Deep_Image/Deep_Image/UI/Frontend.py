@@ -14,6 +14,7 @@ class Frontend:
         self.root = root
         self.root.title("DeepImage - Server")
         self.root.geometry("900x700")
+        self.root.configure(bg="#f8f9fa")
         self.inDash             = False
         self.insettingsPage     = False
 
@@ -46,8 +47,26 @@ class Frontend:
         print(" [Frontend] Initialized")
 
 
-
-
+    def MakeButton(self,parent, text, command, bg_color="#007bff", hover_color="#005cbf", click_color="#004085"):
+        btn = tk.Button(
+            parent,
+            text=text,
+            font=("Segoe UI", 11, "bold"),
+            bg=bg_color,
+            fg="#ffffff",
+            activebackground=click_color,
+            activeforeground="#ffffff",
+            relief="flat",
+            bd=0,
+            padx=20,
+            pady=10,
+            cursor="hand2",
+            command=command
+        )
+              # Bind explicit hover shifts
+        btn.bind("<Enter>", lambda e, b=btn, c=hover_color: b.config(bg=c))
+        btn.bind("<Leave>", lambda e, b=btn, c=bg_color: b.config(bg=c))
+        return btn
 
     '''
     create_indicator_bar: Creates a top bar in the GUI that displays the network connection status and server state.

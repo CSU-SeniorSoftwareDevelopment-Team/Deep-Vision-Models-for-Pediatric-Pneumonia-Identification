@@ -45,56 +45,28 @@ class DashboardPage(tk.Frame):
         self.image_canvas.pack(pady=20, expand=True)
 
 
+
+
+
+
         # LOAD IMAGE BUTTON
         button_frame = tk.Frame(self)
         button_frame.pack(side="bottom", pady=20) 
 
-        load_btn = tk.Button(
-            button_frame,  
-            text="Load Image", 
-            bg="#2e7d32", 
-            fg="white", 
-            font=("Arial", 11, "bold"), 
-            command=self.load_image
-            )
-        # Use side="left" and padx to separate them horizontally
+
+        load_btn =  self.controller.MakeButton(button_frame,"Load:",self.load_image)
         load_btn.pack(side="left", padx=10) 
 
 
-        Send_btn = tk.Button(
-            button_frame,  
-            text="Send:", 
-            bg="#2e7d32", 
-            fg="white", 
-            font=("Arial", 11, "bold"), 
-            command=self.Send
-        )
-        # Use side="left" and padx to separate them horizontally
-        Send_btn.pack(side="left", padx=10)
+        Send_btn =  self.controller.MakeButton(button_frame,"Send:",self.Send)
+        Send_btn.pack(side="left", padx=10) 
 
+        cancel_btn =  self.controller.MakeButton(button_frame,"Cancle:",self.Cancel)
+        cancel_btn.pack(side="left", padx=10) 
 
-        cancel_btn = tk.Button( 
-            button_frame,  
-            text="Cancel:", 
-            bg="#2e7d32", 
-            fg="white", 
-            font=("Arial", 11, "bold"), 
-            command=self.Cancel
-        )
-        # Use side="left" and padx to separate them horizontally
-        cancel_btn.pack(side="left", padx=10)
-
-
-        settings_btn = tk.Button( 
-            button_frame,  
-            text="Settings:", 
-            bg="#2e7d32", 
-            fg="white", 
-            font=("Arial", 11, "bold"), 
-            command=self.controller.GotoSettingsPage
-        )
-        # Use side="left" and padx to separate them horizontally
-        settings_btn.pack(side="left", padx=30)
+        settings_btn =  self.controller.MakeButton(button_frame,"Settings:",self.controller.GotoSettingsPage)
+        settings_btn.pack(side="left", padx=10) 
+      
 
  
     # ----------------------------------------
