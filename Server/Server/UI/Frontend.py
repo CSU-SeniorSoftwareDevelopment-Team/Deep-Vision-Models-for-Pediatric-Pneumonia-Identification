@@ -68,7 +68,7 @@ class Frontend:
             relief="flat",
             bd=0,
             padx=20,
-            pady=10,
+            pady=5,
             cursor="hand2",
             command=command
         )

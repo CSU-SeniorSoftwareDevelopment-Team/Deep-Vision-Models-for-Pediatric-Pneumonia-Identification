@@ -29,15 +29,12 @@ class SettingsPage(tk.Frame):
         upper_row_frame.pack(side="top", padx=20) 
 
        
-        logoff_btn = tk.Button(
-            upper_row_frame, text="Logoff Session", bg="#d32f2f", fg="white", font=("Arial", 11, "bold"),
-            command=self.controller.trigger_logoff
-        )
-        logoff_btn.pack(padx=10)
+        #LOGOFF BUTTON
+        logoff_btn =  self.controller.MakeButton(upper_row_frame,"Logoff Session:",self.controller.trigger_logoff,"#d32f2f", "#b71c1c", "#9a0007")
+        logoff_btn.pack(pady=10)
+
+        back_btn =  self.controller.MakeButton(upper_row_frame,"Back:",self.controller.GoBacktoDash,"#d32f2f", "#b71c1c", "#9a0007")
+        back_btn.pack(pady=10)
 
 
-        back_btn = tk.Button(
-            upper_row_frame, text="Back", bg="#d32f2f", fg="white", font=("Arial", 11, "bold"),
-            command=self.controller.GoBacktoDash
-        )
-        back_btn.pack(padx=10)
+

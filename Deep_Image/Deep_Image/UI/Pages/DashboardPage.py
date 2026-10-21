@@ -28,10 +28,7 @@ class DashboardPage(tk.Frame):
         
 
         #LOGOFF BUTTON
-        logoff_btn = tk.Button(
-            self, text="Logoff Session", bg="#d32f2f", fg="white", font=("Arial", 11, "bold"),
-            command=self.controller.trigger_logoff
-        )
+        logoff_btn =  self.controller.MakeButton(self,"Logoff Session:",self.controller.trigger_logoff,"#d32f2f", "#b71c1c", "#9a0007")
         logoff_btn.pack(pady=10)
 
         

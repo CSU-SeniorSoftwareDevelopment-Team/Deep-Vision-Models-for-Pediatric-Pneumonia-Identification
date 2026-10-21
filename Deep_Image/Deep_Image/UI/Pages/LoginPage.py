@@ -28,10 +28,9 @@ class LoginPage(tk.Frame):
         self.pass_entry.pack(pady=5)
 
         # button
-        login_btn = tk.Button(
-            self, text="Authenticate", width=15, bg="#4CAF50", fg="white", font=("Arial", 11, "bold"),
-            command=lambda: self.controller.trigger_login_attempt(self.user_entry.get(), self.pass_entry.get())
-        )
-        login_btn.pack(pady=30)
 
- 
+        login_btn =  self.controller.MakeButton(self,
+                                                "Authenticate:",
+                                                lambda: self.controller.trigger_login_attempt(self.user_entry.get(), self.pass_entry.get()),
+                                                "#4CAF50", "#388E3C", "#1B5E20")
+        login_btn.pack(pady=10)
