@@ -62,32 +62,30 @@ class Networking(object):
 
 
 
-    '''Start: Starts the networking connection to the server and spools the monitor loop onto a background thread.
-       Parameters: None
-       Returns: True if the connection was successful, False otherwise.
+    '''Start: 
+                   Starts the networking connection to the server and spools the monitor loop onto a background thread.
+       Parameters: 
+                   None
+       Returns:    
+                   True if the connection was successful, False otherwise.
     '''
-    
     def Start(self):
         """Creates a verified TLS connection to the central server."""
 
         try:
-            # Create a TLS client context.
-            # The client verifies the server using the shared Root CA.
+            # Create a TLS client context
             context = ssl.create_default_context(
                 ssl.Purpose.SERVER_AUTH
             )
 
-            # Require a trusted server certificate.
+            # Require a trusted server cert
             context.verify_mode = ssl.CERT_REQUIRED
-
-            # Verify that the server certificate matches the server IP.
             context.check_hostname = True
 
-            # Require TLS 1.2 or newer.
+            # Require TLS 1.2 or newer
             context.minimum_version = ssl.TLSVersion.TLSv1_2
 
-            # Load the universal Root CA certificate.
-            # Every client receives the same root_ca.crt file.
+            # Load the universal Root CA cert
             context.load_verify_locations(
                 cafile="NET/Certification/root_ca.crt"
             )
@@ -103,25 +101,22 @@ class Networking(object):
         raw_socket = None
 
         try:
-            # Create the underlying TCP socket.
             raw_socket = socket.socket(
                 socket.AF_INET,
                 socket.SOCK_STREAM
             )
-
-            # Apply Windows TCP keep-alive settings before TLS wrapping.
             self.enable_windows_keepalive(raw_socket)
-
-            # Connect to the central server.
             raw_socket.connect((self.IP, self.port))
 
-            # Upgrade the TCP connection to TLS server_hostname must match the IP SAN in server.crt
+            # Upgrade the TCP connection to TLS server_hostname 
+            # must match the IP SAN in server.crt
             self.soc = context.wrap_socket(
                 raw_socket,
                 server_hostname=self.IP
             )
 
-            # Connection is now established and the server certificate has been verified against root_ca.crt
+            # Connection is now established and the
+            # server certificate has been verified against root_ca.crt
             self.is_connected = True
             self.is_running = True
 
@@ -151,7 +146,7 @@ class Networking(object):
         except Exception as e:
             print(f"Failed to initiate connection: {e}")
 
-        # Clean up if connection or TLS setup fails.
+        # Clean up if connection or TLS setup fails
         if raw_socket:
             try:
                 raw_socket.close()
@@ -173,53 +168,66 @@ class Networking(object):
         Returns: None
     '''
     def NET(self):
-        
+
+        connection = self.soc
         print("Connection State: Connected")
-    
-        while True:
-            try:
-                header = self.extractParts(8)
-                # zero-byte read means remote host disconnected 
-                if not header:
-                    print("Connection State: Disconnected (Closed by remote host)")
-                    self.is_connected = False
-                    break
-                
 
-                # Extract payload and message type for parsing the data 
-                msg_type, payload_length = struct.unpack('!II', header)
-                payload = self.extractParts(payload_length)
-                if payload is None:
-                    print("Connection State: Disconnected during payload transfer")
-                    self.is_connected = False
-                    break
-                # parse data based on the message type and payload
-                self.process_message(msg_type, payload)
-
-                # update connection state - data was processed 
-                self.is_connected = True
-              
-            # Edge cases - we need to hande this with loggers and such for backend data collections in a real application - Steven 
-            except (ConnectionResetError, ConnectionAbortedError, OSError):
-                print("Connection State: Disconnected (Connection forcibly reset/lost)")
-                self.is_connected = False
-                break
-            except socket.timeout:
-                print("Connection State: Idle (Timeout reached, still alive)")
-                continue
-            except Exception as e:
-                print(f"Connection State: Error encountered: {e}")
-                self.is_connected = False
-                break
-
-        # Clean up locally when loop terminates
         try:
-            self.soc.close()
-        except Exception:
-            pass
-   
+            while self.is_running:
 
+                try:
+                    # Read the 8-byte packet header
+                    header = self.extractParts(8, connection)
+                    if not header:
+                        print("Connection State: Disconnected (Remote host closed connection)")
+                        break
+                    msg_type, payload_length = struct.unpack('!II', header)
 
+                    # Read payload
+                    payload = self.extractParts(payload_length, connection)
+                    if payload is None:
+                        print("Connection State: Disconnected during payload transfer")
+                        break
+
+                    # Process received message
+                    self.process_message(msg_type, payload)
+                    self.is_connected = True
+
+                except socket.timeout:
+                    print("Connection State: Idle (Timeout reached)")
+                    continue
+
+                except (ConnectionResetError, ConnectionAbortedError, OSError, ssl.SSLError) as e:
+                    print(f"Connection State: Disconnected ({e})")
+                    break
+
+                except Exception as e:
+                    print(f"Connection State: Error encountered: {e}")
+                    break
+
+        #  reset connection state when the monitor exits
+        finally:
+            
+            self.is_connected = False
+            self.is_running = False
+
+            # kill old connection 
+            if connection:
+                try:
+                    connection.shutdown(socket.SHUT_RDWR)
+                except Exception:
+                    pass
+                try:
+                    connection.close()
+                except Exception:
+                    pass
+
+      
+            # DO NOT - set self.soc to None if it has already been replaced by a new connection 
+            # bug fix - auto client logout on forced logoff
+            if self.soc is connection:
+                self.soc = None
+            print("Connection State: Monitoring stopped. Reconnection available.")
 
 
 
@@ -227,21 +235,30 @@ class Networking(object):
     Parameters: num_bytes (int) - The number of bytes to extract from the socket.
     Returns: bytes - The extracted bytes from the socket, or None if the connection is closed.
     '''
-    def extractParts(self, num_bytes):
-        buffer = bytearray() 
-        while len(buffer) < num_bytes: # Extract payload data from the socket until the specified number of bytes is reached
 
-            packet = self.soc.recv(num_bytes - len(buffer))
+    def extractParts(self, num_bytes, sock=None):
+
+        if sock is None:
+            sock = self.soc
+
+        if sock is None:
+            return None
+
+        buffer = bytearray()
+
+        while len(buffer) < num_bytes:
+
+            packet = sock.recv(num_bytes - len(buffer))
+
             if not packet:
-                # if data = b"" then the connection is dead 
-                self.is_running     = False # reset state tracking 
-                self.is_connected   = False 
-                self.forcedLogOut   = True  # reset/force frontend to login page 
-                return None  # Connection closed
+                self.is_running = False
+                self.is_connected = False
+                self.forcedLogOut = True
+                return None
+
             buffer.extend(packet)
-        return bytes(buffer) # Return the extracted bytes as a bytes object
 
-
+        return bytes(buffer)
 
 
 
@@ -326,6 +343,7 @@ class Networking(object):
         # tries to reconnect/start background thread if the connection is down
         if self.is_running == False:
            if time.time() - self.current_time >  5:
+              print("Network disconnected. Attempting reconnection...")
               self.Start()
               self.current_time = time.time()
 
@@ -364,11 +382,13 @@ class Networking(object):
 
     def handle_logout_response(self,payload):
         response = payload.decode('utf-8')
-        if response == "OK":
+        if response == "OK" or response == "NO":
+            self.forcedLogOut = True
             self.is_loggedin = False
         if response == "Force":
             self.forcedLogOut = True
             self.is_loggedin = False
+        
 
     
     def handle_image_payload(self,payload):

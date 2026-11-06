@@ -49,7 +49,7 @@ class Networking(object):
         self.numberOfActiveUsers    = 0 
         
         #settings
-        self.keepalive_time         = 5000          # Time in seconds before sending the first keep-alive probe
+        self.keepalive_time         = 1000          # Time in seconds before sending the first keep-alive probe
         self.keepalive_interval     = 1000          # Time in seconds between keep-alive probes
         self.connection_amount      = 10            # maximum number of connections allowed
         self.UserTimeOut            = 5000
@@ -143,8 +143,7 @@ class Networking(object):
                       
                      )
                 #--------------------------------------------
-                except ssl.SSLCertVerificationError as e:
-                    print(f"TLS CERTIFICATE VERIFICATION FAILED: {e}")
+
                 except Exception as tls_err:
                     print(f"TLS Handshake failed from {addr}: {tls_err}")
                     raw_client_sock.close()
@@ -265,16 +264,24 @@ class Networking(object):
     '''
     def ForceLogout(self, user):
         self.AddActiveUser(False)
-        # tell the client that the server logged him out - this should force the client app
+        # tell the client that the server logged them out - this should force the client app
         # to bring them back to the login page 
         response = f"Force"
         if user.soc != None:
             self.send_packet(user.soc,MsgType.LOGOUT,response.encode('utf-8'))
-            user.soc.close()
+            try:
+                   user.soc.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                   pass
+
+            try:
+                   user.soc.close()
+            except OSError:
+                   pass
+            user.soc = None # ditching the socket reference
+            
         user.clearLog() # clear local logs 
         user.loggedin = False
-
-
 
 
 
@@ -378,7 +385,6 @@ class Networking(object):
 
         if  user_.loggedin == True: # logged in already
             self.AddActiveUser(False)
-            user_.loggedin = False
             response = f"OK"
             self.send_packet(client_socket,MsgType.LOGOUT,response.encode('utf-8'))
             user_.clearLog() # clear local change logs
@@ -388,7 +394,9 @@ class Networking(object):
             response = f"NO"
             self.send_packet(client_socket,MsgType.LOGOUT,response.encode('utf-8'))
             print(f"Unauthorized Logout requested {user_.username}")
+        user_.loggedin = False # force all users to log
         return False
+
 
 
     def RunImage(self, client_ip, client_socket, user_, payload):
