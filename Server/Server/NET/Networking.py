@@ -75,7 +75,7 @@ class Networking(object):
         print(" [Networking] Initialized")
 
 
-
+        
 
 
     '''
@@ -140,7 +140,11 @@ class Networking(object):
                     secure_client_sock = context.wrap_socket(
                                                                 raw_client_sock,
                                                                 server_side=True
-                                                             )
+                      
+                     )
+                #--------------------------------------------
+                except ssl.SSLCertVerificationError as e:
+                    print(f"TLS CERTIFICATE VERIFICATION FAILED: {e}")
                 except Exception as tls_err:
                     print(f"TLS Handshake failed from {addr}: {tls_err}")
                     raw_client_sock.close()
