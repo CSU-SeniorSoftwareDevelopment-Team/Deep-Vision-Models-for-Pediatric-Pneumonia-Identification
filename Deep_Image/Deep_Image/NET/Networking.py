@@ -115,15 +115,13 @@ class Networking(object):
             # Connect to the central server.
             raw_socket.connect((self.IP, self.port))
 
-            # Upgrade the TCP connection to TLS.
-            # server_hostname must match the IP SAN in server.crt.
+            # Upgrade the TCP connection to TLS server_hostname must match the IP SAN in server.crt
             self.soc = context.wrap_socket(
                 raw_socket,
                 server_hostname=self.IP
             )
 
-            # Connection is now established and the server certificate
-            # has been verified against root_ca.crt.
+            # Connection is now established and the server certificate has been verified against root_ca.crt
             self.is_connected = True
             self.is_running = True
 
