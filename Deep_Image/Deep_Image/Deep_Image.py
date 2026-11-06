@@ -2,22 +2,23 @@
 '''------------------------------------------------------------------------------------------------
 DEEP IMAGE ( Client ) 
 ---------------------------------------------------------------------------------------------------
-Deep Image is a client application that connects to a server to send and receive image data for processing.
-It utilizes a neural network backend for image analysis and a frontend GUI for user interaction.
-The application is designed to run on a local machine and communicate with a remote server for image processing tasks.
+    
+    Deep Image is a client application that connects to a server to send and receive image data for processing.
+    It utilizes a neural network backend for image analysis and a frontend GUI for user interaction.
+    The application is designed to run on a local machine and communicate with a remote server for image processing tasks.
 
-This desgine is a collaborative project developed by a team of students at Columbus State University 
-during the Fall 2026 semester.
+    This desgine is a collaborative project developed by a team of students at Columbus State University 
+    during the Fall 2026 semester.
 
-The project is divided into two development cycles,focusing on the base implementation of the AI
-and demo in the first cycle,and server-based implementation/service of the AI demo in the second cycle.
+    The project is divided into two development cycles,focusing on the base implementation of the AI
+    and demo in the first cycle,and server-based implementation/service of the AI demo in the second cycle.
 
-This project hopes to mimic the functionality of a server-based image processing service, 
-allowing users to upload images, and receive processed results from the server,leveraging the power of neural 
-networks for image analysis. 
+    This project hopes to mimic the functionality of a server-based image processing service, 
+    allowing users to upload images, and receive processed results from the server,leveraging the power of neural 
+    networks for image analysis. 
 
-This mimics real-world applications where client-server architectures 
-are used for computationally intensive tasks.
+    This mimics real-world applications where client-server architectures 
+    are used for computationally intensive tasks.
 
 ----------------------------------------------------------------------------------------------------
 Team Lead:                    Steven Andrews II
