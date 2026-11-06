@@ -39,8 +39,8 @@ from NET.protocol import MsgType
 
 class Networking(object):
     def __init__(self):
-        #self.IP                     = '100.105.179.38'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
-        self.IP                     = '127.0.0.1'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
+        self.IP                     = '100.105.179.38'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
+        #self.IP                     = '127.0.0.1'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
 
         self.port                   = 8500               # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
         self.keepalive_time         = 5000               # Time in seconds before sending the first keep-alive probe
@@ -66,51 +66,106 @@ class Networking(object):
        Parameters: None
        Returns: True if the connection was successful, False otherwise.
     '''
+    
     def Start(self):
-        """Creates the connection and spools the monitor loop onto a background thread."""
-        context                     = ssl.create_default_context()
-        context.check_hostname      = False
+        """Creates a verified TLS connection to the central server."""
 
-        context.verify_mode         = ssl.CERT_REQUIRED # Update: cert is required - trusted server connection only / protects users 
-
-       
-        # load the shared cert file of the server 
-        # Root CA cert never changes and is used to check the server certifications 
-        # Client verifies if the server is safe - server checks IP agaist white list and User data 
         try:
-            context.load_verify_locations(cafile="NET/Certification/root_ca.crt")
+            # Create a TLS client context.
+            # The client verifies the server using the shared Root CA.
+            context = ssl.create_default_context(
+                ssl.Purpose.SERVER_AUTH
+            )
+
+            # Require a trusted server certificate.
+            context.verify_mode = ssl.CERT_REQUIRED
+
+            # Verify that the server certificate matches the server IP.
+            context.check_hostname = True
+
+            # Require TLS 1.2 or newer.
+            context.minimum_version = ssl.TLSVersion.TLSv1_2
+
+            # Load the universal Root CA certificate.
+            # Every client receives the same root_ca.crt file.
+            context.load_verify_locations(
+                cafile="NET/Certification/root_ca.crt"
+            )
+
         except FileNotFoundError:
-            print("CRITICAL: 'root_ca.crt' file is missing on the client. Cannot connect securely.")
+            print("CRITICAL: root_ca.crt is missing. Cannot connect securely.")
             return False
 
+        except ssl.SSLError as e:
+            print(f"CRITICAL: Failed to load Root CA: {e}")
+            return False
+
+        raw_socket = None
 
         try:
-            # Note: Steven Andrews II - Apply Windows Keep-Alives to the raw socket 
-            # BEFORE wrapping with SSL, or the TLS layer will block the settings.
-            # Prevents idle connection dropouts during long periods of inactivity on the socket 
-            # >> time out is handled at the application layer 
-            raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # Create the underlying TCP socket.
+            raw_socket = socket.socket(
+                socket.AF_INET,
+                socket.SOCK_STREAM
+            )
+
+            # Apply Windows TCP keep-alive settings before TLS wrapping.
             self.enable_windows_keepalive(raw_socket)
 
-            self.soc = context.wrap_socket(raw_socket, server_hostname=None)
-            self.soc.connect((self.IP, self.port))
+            # Connect to the central server.
+            raw_socket.connect((self.IP, self.port))
 
+            # Upgrade the TCP connection to TLS.
+            # server_hostname must match the IP SAN in server.crt.
+            self.soc = context.wrap_socket(
+                raw_socket,
+                server_hostname=self.IP
+            )
+
+            # Connection is now established and the server certificate
+            # has been verified against root_ca.crt.
             self.is_connected = True
             self.is_running = True
-            # start thread - background thread to monitor the connection state and process incoming data
-            monitor_thread = threading.Thread(target=self.NET, daemon=True)
+
+            # Start the background networking monitor.
+            monitor_thread = threading.Thread(
+                target=self.NET,
+                daemon=True
+            )
             monitor_thread.start()
-            
-            print(f"Successfully connected to {self.IP}:{self.port} and spooled monitor thread.")
-            
+
+            print(
+                f"Secure TLS connection established with "
+                f"{self.IP}:{self.port}"
+            )
+
             return True
-            
+
+        except ssl.SSLCertVerificationError as e:
+            print(f"TLS CERTIFICATE VERIFICATION FAILED: {e}")
+
+        except ssl.SSLError as e:
+            print(f"TLS CONNECTION FAILED: {e}")
+
+        except (ConnectionError, OSError) as e:
+            print(f"NETWORK CONNECTION FAILED: {e}")
+
         except Exception as e:
             print(f"Failed to initiate connection: {e}")
-            self.is_connected = False
-            self.is_running   = False
-            return False
-    
+
+        # Clean up if connection or TLS setup fails.
+        if raw_socket:
+            try:
+                raw_socket.close()
+            except Exception:
+                pass
+
+        self.soc = None
+        self.is_connected = False
+        self.is_running = False
+
+        return False
+
 
 
 
