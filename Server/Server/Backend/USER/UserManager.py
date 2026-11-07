@@ -1,12 +1,56 @@
 from Backend.USER.User import User
-
+import json
 class UserManager(object):
     def __init__(self):
 
         self.users = {}  # Dictionary to store user data
 
+        self.json_path = "Backend/USER/users.json"  # Path to the JSON file for saving/loading users
 
 
+    """
+        Load users from a JSON file. If the file does not exist, 
+        it safely skips loading without crashing
+    """
+    def LoadUsers(self):
+        print(f"-------------------------------------------------")
+        try:
+            with open(self.json_path, "r") as f:      
+                json_data = json.load(f)
+                
+            for user_data in json_data:
+                username = user_data['username']
+                password = user_data['password']
+                ip = user_data['ip']
+                isManager = user_data.get('isManager', False)
+                
+                self.add_user(username, password, ip, isManager)
+                
+            print(f"-------------------------------------------------")
+        except FileNotFoundError:
+            print(f"Warning: {self.json_path} not found. Starting with an empty user list.")
+            
+        except json.JSONDecodeError:
+            print(f"Error: {self.json_path} is empty or corrupted. Starting fresh.")
+
+
+
+
+    """
+        Save users to the JSON file.
+    """
+    def SaveUser(self):
+        user_list = []
+        for user in self.users.values():
+            user_list.append({
+                'username': user.username,
+                'password': user.password,
+                'ip': user.IP_address,    
+                'isManager': user.Manager  
+            })
+        # dump constructed list to json file
+        with open(self.json_path, "w") as f:
+            json.dump(user_list, f, indent=4)
 
 
     '''
@@ -25,7 +69,7 @@ class UserManager(object):
               return False
         
        self.users[username] = User(username, password, ip , isManager)
-
+       print(f"Loaded user: {username} : {ip} ")
 
        return True
 

@@ -40,7 +40,6 @@ from NET.protocol import MsgType
 class Networking(object):
     def __init__(self):
         self.IP                     = '100.105.179.38'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
-        #self.IP                     = '127.0.0.1'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
 
         self.port                   = 8500               # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
         self.keepalive_time         = 5000               # Time in seconds before sending the first keep-alive probe
