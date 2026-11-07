@@ -54,6 +54,7 @@ class Backend(object):
         self.print_every        = 10
         self.threshold          = 70 # threshold for error
 
+        self.lock = False
 
         # ---------------------------------------------------------
         # VARs
@@ -239,8 +240,267 @@ class Backend(object):
 
 
 
-    def Update():
-        pass
+
+
+
+
+    ''' Train the model for a specified number of epochs. If no epochs are specified, use the default value.
+    Properties:
+        epochs:                 Number of epochs to train the model. If None, use the default value.
+        progress_callback:      Optional callback function to report progress during training.
+        on_training_complete:   Optional callback function to be called when training is complete.
+    '''
+    def train_model(self, epochs=None, progress_callback=None ,  on_training_complete = None ):
+
+        if epochs is None:
+            epochs = self.epochs
+
+        # display start of training session 
+        print("\n==============================")
+        print("STARTING TRAINING")
+        print("==============================")
+
+        print(f"Epochs: {epochs}")
+        print(f"Device: {self.device}")
+        print(
+            f"Images per epoch: "
+            f"{len(self.train_dataset)}"
+        )
+        print(
+            f"Batches per epoch: "
+            f"{len(self.train_dataloader)}"
+        )
+
+        self.model.train()
+
+        total_training_start = time.time()
+
+        for epoch in range(epochs):         # epoch loop 
+
+            epoch_start         = time.time() # start up time
+            running_loss        = 0.0         # initialize running loss for the epoch
+            correct             = 0
+            total               = 0
+
+            print("\n==============================")
+            print(
+                f"Epoch {epoch + 1}/{epochs}"
+            )
+            print("==============================")
+
+            for batch_idx, (inputs, labels) in enumerate(
+                self.train_dataloader
+            ):
+
+                batch_start = time.time()   # start up time batch
+
+                # -------------------------------------------------
+                # MOVE DATA TO DEVICE  
+                # non blocking
+                # -------------------------------------------------
+
+                inputs = inputs.to(
+                    self.device,
+                    non_blocking=True
+                )
+
+                labels = labels.to(
+                    self.device,
+                    non_blocking=True
+                )
+
+                # -------------------------------------------------
+                # CLEAR GRADIENTS
+
+
+                self.optimizer.zero_grad(
+                    set_to_none=True
+                )
+
+                # FORWARD PASS
+
+                outputs = self.model(
+                    inputs
+                )
+
+ 
+                # LOSS
+
+
+                loss = self.loss_fn(
+                    outputs,
+                    labels
+                )
+
+
+                # BACKPROPAGATION
+
+                loss.backward()
+
+
+                # -------------------------------------------------
+                # UPDATE WEIGHTS
+                # -------------------------------------------------
+
+                self.optimizer.step()
+
+                # STATISTICS
+
+                running_loss += loss.item()
+
+                _, predicted = torch.max(
+                    outputs,
+                    1
+                )
+
+                total += labels.size(0)
+
+                correct += (
+                    predicted == labels
+                ).sum().item()
+
+
+                # PROGRESS report
+
+
+                if (
+                    batch_idx % self.print_every == 0
+                    or batch_idx == len(
+                        self.train_dataloader
+                    ) - 1
+                ):
+
+                    batch_time = (
+                        time.time()
+                        - batch_start
+                    )
+
+                    elapsed = (
+                        time.time()
+                        - epoch_start
+                    )
+
+                    progress = (
+                        (batch_idx + 1)
+                        / len(self.train_dataloader)
+                    ) * 100
+
+                    current_accuracy = (
+                        100 * correct / total
+                    )
+
+                    avg_batch_time = (
+                        elapsed
+                        / (batch_idx + 1)
+                    )
+
+                    remaining_batches = (
+                        len(self.train_dataloader)
+                        - (batch_idx + 1)
+                    )
+
+                    estimated_remaining = (
+                        remaining_batches
+                        * avg_batch_time
+                    )
+
+                    # gets all of the data of the current epoch 
+                    print(
+                        f"[{progress:6.2f}%] "
+                        f"Batch "
+                        f"{batch_idx + 1}/"
+                        f"{len(self.train_dataloader)} "
+                        f"| Loss: "
+                        f"{loss.item():.4f} "
+                        f"| Accuracy: "
+                        f"{current_accuracy:.2f}% "
+                        f"| Batch: "
+                        f"{batch_time:.2f}s "
+                        f"| ETA: "
+                        f"{estimated_remaining / 60:.1f} min"
+                    )
+                    # sow results in UI
+                    if progress_callback is not None:
+
+                        progress_callback(
+                            epoch + 1,
+                            epochs,
+                            loss,
+                            current_accuracy
+                        )
+
+            # EPOCH RESULTS
+
+            # average losses 
+            average_loss = (
+                running_loss
+                / len(self.train_dataloader)
+            )
+            # accuracy 
+            accuracy = (
+                100 * correct / total
+            )
+            # run time 
+            epoch_time = (
+                time.time()
+                - epoch_start
+            )
+
+            print("\n------------------------------")
+            print(
+                f"Epoch {epoch + 1} COMPLETE"
+            )
+            print("------------------------------")
+
+            print(
+                f"Loss:     {average_loss:.4f}"
+            )
+
+            print(
+                f"Accuracy: {accuracy:.2f}%"
+            )
+
+            print(
+                f"Time:     {epoch_time / 60:.2f} minutes"
+            )
+
+            if torch.cuda.is_available():
+
+                print(
+                    f"GPU Memory Allocated: "
+                    f"{torch.cuda.memory_allocated() / 1024**3:.2f} GB"
+                )
+
+                print(
+                    f"GPU Memory Reserved:  "
+                    f"{torch.cuda.memory_reserved() / 1024**3:.2f} GB"
+                )
+
+        total_training_time = (
+            time.time()
+            - total_training_start
+        )
+
+        print("\n==============================")
+        print("TRAINING COMPLETE")
+        print("==============================")
+
+        print(
+            f"Total training time: "
+            f"{total_training_time / 60:.2f} minutes"
+        )
+
+        self.lock = True  # lock the backend for other operations until its loaded - need to finish / unused atm
+
+        # save the resenet50 model - load on boot 
+        if on_training_complete is not None:
+            on_training_complete() # CALL BACK TO FRONTSIDE POPUP FOR SAVE MODEL - THIS IS A CALLBACK FUNCTION PASSED FROM THE FRONTEND - this will lock the backend until the user saves the model - this is a security feature to prevent overwriting a trained model without user consent
+
+        # save the model to disk
+        self.saveModel()
+        self.loadModel()  # reload the model to ensure it's in eval mode and on the correct device
+        
+        self.lock = False  # unlock the backend for other operations
 
 
 
@@ -297,6 +557,8 @@ class Backend(object):
 
     '''
     Predict images from network buffer
+    Properties:
+        image_bytes:        a byte stream of the image to be predicted.
     '''
     def predict_from_buffer(self, image_bytes):
         self.Processing = True
@@ -323,7 +585,7 @@ class Backend(object):
     '''
        predict - predicts the class of a given sample using the trained model.
        Properties:
-           sample: a single image tensor of shape (1, 1, 224, 224) - a single grayscale image resized to 224x224 pixels.
+           sample:      a single image tensor of shape (1, 1, 224, 224) - a single grayscale image resized to 224x224 pixels.
     '''
     def predict(self, sample):
 
@@ -368,7 +630,12 @@ class Backend(object):
         return label, sum_/samples  # return the average confidence over 2 runs
 
 
-    # helper function to get the container 
+
+    '''
+    get_class_name - returns the class name corresponding to a given class index.
+    Properties:
+        class_index:    the index of the class (0 or 1).
+    '''
     def get_class_name(self, class_index):
 
         idx_to_class = {

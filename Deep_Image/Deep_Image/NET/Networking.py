@@ -54,6 +54,9 @@ class Networking(object):
         self.forcedLogOut           = False              # Forces the logout to login page ( frontend toggle )
 
 
+        self.prediction_result = {}               # placeholder for the last prediction result received from the server
+
+
         # start a timer
 
         self.current_time = time.time() 
@@ -390,8 +393,17 @@ class Networking(object):
             self.is_loggedin = False
         
 
-    
+   
     def handle_image_payload(self,payload):
         response = payload.decode('utf-8')
-        print(response)
+        results = response.split(":")
+
+        if len(results) == 3:
+            if results[0] == "OK": 
+                self.prediction_result = {
+                    "status": results[0],
+                    "diagnosis": results[1],
+                    "confidence": float(results[2])*100  # Convert to percentage
+                }
+
 

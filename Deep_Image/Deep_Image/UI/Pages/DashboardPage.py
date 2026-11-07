@@ -71,6 +71,9 @@ class DashboardPage(tk.Frame):
     #-----------------------------------------
 
 
+    def update_prediction_result(self, prediction_result):
+        # Placeholder for updating prediction results in the GUI
+        print(f"Prediction Result: {prediction_result}")                
 
     def Send(self):
         if self.currentImageBytes == None:
