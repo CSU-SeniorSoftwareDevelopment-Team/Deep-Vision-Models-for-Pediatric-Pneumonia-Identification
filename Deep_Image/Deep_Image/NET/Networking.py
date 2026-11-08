@@ -120,7 +120,7 @@ class Networking(object):
 
             # Connection is now established and the
             # server certificate has been verified against root_ca.crt
-            self.is_connected = False
+            self.is_connected = True
             self.is_running = True
 
             # Start the background networking monitor.
