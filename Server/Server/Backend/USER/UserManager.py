@@ -39,7 +39,7 @@ class UserManager(object):
     """
         Save users to the JSON file.
     """
-    def SaveUser(self):
+    def SaveAllUsers(self):
         user_list = []
         for user in self.users.values():
             user_list.append({
@@ -68,7 +68,7 @@ class UserManager(object):
               print(f"User {username} already exists.")
               return False
         
-       self.users[username] = User(username, password, ip , isManager)
+       self.users[username] = User(username, password, ip , isManager) # Instantiate a new User object and add it to the users dictionary
        print(f"Loaded user: {username} : {ip} ")
 
        return True

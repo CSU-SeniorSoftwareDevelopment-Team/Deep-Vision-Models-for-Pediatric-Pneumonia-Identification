@@ -465,7 +465,7 @@ class DashboardPage(tk.Frame):
                 )
                 return
 
-            self.controller.network.user_manager.SaveUser()
+            self.controller.network.user_manager.SaveAllUsers()
 
             messagebox.showinfo(
                 "User Management",
