@@ -1,7 +1,7 @@
 
 import tkinter as tk
 from tkinter import messagebox
-
+import ipaddress
 
 class DashboardPage(tk.Frame):
 
@@ -407,11 +407,10 @@ class DashboardPage(tk.Frame):
 
         user_id = self.user_id_entry.get().strip()
         password = self.new_password_entry.get()
-        confirm_password = self.confirm_password_entry.get()
         ip = self.InputIP.get().strip()
 
         # Check required fields
-        if not user_id or not password or not confirm_password or not ip:
+        if not user_id or not password or not ip:
             messagebox.showwarning(
                 "Missing Information",
                 "Please complete all user fields."
@@ -426,12 +425,7 @@ class DashboardPage(tk.Frame):
             )
             return
 
-        if password != confirm_password:
-            messagebox.showerror(
-                "Password Error",
-                "The passwords do not match."
-            )
-            return
+       
 
         # Validate VPN IP
         try:
@@ -478,7 +472,6 @@ class DashboardPage(tk.Frame):
 
             self.user_id_entry.delete(0, tk.END)
             self.new_password_entry.delete(0, tk.END)
-            self.confirm_password_entry.delete(0, tk.END)
             self.InputIP.delete(0, tk.END)
 
         except Exception as e:
