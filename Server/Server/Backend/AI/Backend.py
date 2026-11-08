@@ -56,7 +56,7 @@ class Backend(object):
         self.print_every        = 10
         self.threshold          = 70 # threshold for error
 
-        self.lock = threading.Lock() # locks networking while training is saving to disk 
+        self.lock = False # locks networking while training is saving to disk 
 
         # ---------------------------------------------------------
         # VARs
@@ -291,7 +291,7 @@ class Backend(object):
             print("==============================")
 
             if epoch == epochs - 1:
-                 self.lock.acquire()
+                 self.lock = True
 
 
             for batch_idx, (inputs, labels) in enumerate(
@@ -506,7 +506,7 @@ class Backend(object):
         self.saveModel()
         self.loadModel()     # reload the model to ensure it's in eval mode and on the correct device
         
-        self.lock.release()  # Unlock the network 
+        self.lock = False  # Unlock the network 
 
 
 

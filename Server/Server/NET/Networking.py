@@ -239,9 +239,10 @@ class Networking(object):
             self.context.verify_mode = ssl.CERT_NONE 
             
             # spool the main listener loop onto a background thread
+            self.is_running = True
             self.listener_thread = threading.Thread(target=self.Listener, args=(self.context,), daemon=True)
             self.listener_thread.start()
-            self.is_running = True # running indicator for the background thread
+            
             
             print(f"Server successfully started on port {self.port}. Listening for connections...")
             return True
@@ -291,6 +292,7 @@ class Networking(object):
                 user_ = self.user_manager.getUserByIP(client_ip)
                 if not user_:
                    print("Invalid IP detected")
+                   secure_client_sock.close()
                    continue # skip creating a listener thread 
 
                 # bind the soc to the user - this allows us to send data arbitraily through the User object
@@ -298,11 +300,12 @@ class Networking(object):
 
                 # thread the client handler to allow multiple clients to connect simultaneously
                 user_.clientThread = threading.Thread(
-                    target=self.Handler, 
-                    args=(secure_client_sock,user_, addr), 
+                    target=self.Handler,
+                    args=(secure_client_sock, user_, addr),
                     daemon=True
                 )
-                user_.client_thread.start()
+
+                user_.clientThread.start()
                 
             except Exception:
                 # This will catch socket breaks when Stop() 
@@ -503,7 +506,7 @@ class Networking(object):
         incoming_string = payload.decode('utf-8')
         username, password = incoming_string.split(':')
        
-        if self.backend.lock.locked():
+        if self.backend.lock == True:
                 response = f"UPDATING"
                 self.send_packet(client_socket,MsgType.LOGIN,response.encode('utf-8'))
                 print(f"Authentication failed: Update underway")
@@ -544,7 +547,7 @@ class Networking(object):
     def RunImage(self, client_ip, client_socket, user_, payload):
 
          # system is updating
-         if self.backend.lock.locked():
+         if self.backend.lock == True:
             response = f"UPDATING"
             self.send_packet(client_socket,MsgType.IMAGE,response.encode('utf-8'))
             return False

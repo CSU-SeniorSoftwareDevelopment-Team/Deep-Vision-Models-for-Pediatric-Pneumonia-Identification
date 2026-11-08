@@ -120,7 +120,7 @@ class Networking(object):
 
             # Connection is now established and the
             # server certificate has been verified against root_ca.crt
-            self.is_connected = True
+            self.is_connected = False
             self.is_running = True
 
             # Start the background networking monitor.
@@ -342,14 +342,18 @@ class Networking(object):
         Parameters: None
         Returns: None
     '''
-    def update(self):
-        # tries to reconnect/start background thread if the connection is down
-        if self.is_running == False:
-           if time.time() - self.current_time >  self.reconnect_speed:
-              print("Network disconnected. Attempting reconnection...")
-              self.Start()
-              self.current_time = time.time()
 
+    def update(self):
+        # Attempt reconnection when both connection states are down
+        if not self.is_running and not self.is_connected:
+
+            if time.time() - self.current_time >= self.reconnect_speed:
+
+                print("Network disconnected. Attempting reconnection...")
+
+                self.current_time = time.time()
+
+                self.Start()
 
 
     #=======================================================================
@@ -389,7 +393,7 @@ class Networking(object):
             self.is_loggedin = False
         if  response == "UPDATING":
             messagebox.showinfo("Update", "The system is currently updating. Please try again later.")
-
+            self.is_loggedin = False
 
 
     def handle_logout_response(self,payload):

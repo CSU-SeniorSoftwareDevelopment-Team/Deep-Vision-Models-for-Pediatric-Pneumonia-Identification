@@ -19,13 +19,68 @@ class DashboardPage(tk.Frame):
         self.pil_image = None
         self.tk_image = None
 
-        # Default canvas dimensions
         self.canvas_w = 700
         self.canvas_h = 420
 
+        self.last_prediction_result = None
+
         self.configure(bg=self.theme["BG"])
 
-        self.last_prediction_result = None # save the last prediction result
+        # ========================================
+        # SCROLLABLE PAGE CONTAINER
+        # ========================================
+
+        self.scroll_canvas = tk.Canvas(
+            self,
+            bg=self.theme["BG"],
+            highlightthickness=0,
+            borderwidth=0
+        )
+
+        self.scrollbar = tk.Scrollbar(
+            self,
+            orient="vertical",
+            command=self.scroll_canvas.yview,
+            bg=self.theme["CARD"],
+            troughcolor=self.theme["BG"],
+            activebackground=self.theme["ACCENT"]
+        )
+
+        self.scroll_canvas.configure(
+            yscrollcommand=self.scrollbar.set
+        )
+
+        self.scrollbar.pack(side="right", fill="y")
+        self.scroll_canvas.pack(side="left", fill="both", expand=True)
+
+        # Main frame that holds the entire dashboard
+        self.scrollable_frame = tk.Frame(
+            self.scroll_canvas,
+            bg=self.theme["BG"]
+        )
+
+        self.canvas_window = self.scroll_canvas.create_window(
+            (0, 0),
+            window=self.scrollable_frame,
+            anchor="nw"
+        )
+
+        # Update scrolling region when content changes
+        self.scrollable_frame.bind(
+            "<Configure>",
+            self._update_scroll_region
+        )
+
+        # Make inner frame match canvas width
+        self.scroll_canvas.bind(
+            "<Configure>",
+            self._resize_scroll_frame
+        )
+
+        # Mouse wheel support
+        self.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.bind_all("<Button-4>", self._on_mousewheel)
+        self.bind_all("<Button-5>", self._on_mousewheel)
 
         self.build_ui()
 
@@ -40,7 +95,10 @@ class DashboardPage(tk.Frame):
 
     def build_ui(self):
 
-        content = tk.Frame(self, bg=self.theme["BG"])
+        content = tk.Frame(
+            self.scrollable_frame,
+            bg=self.theme["BG"]
+        )
         content.pack(fill="both", expand=True, padx=30, pady=20)
 
        
@@ -389,6 +447,54 @@ class DashboardPage(tk.Frame):
     # ==================================================================================================================================
     # HELPER FUNCTIONS
     # ==================================================================================================================================
+
+
+    # Scrollable frame update functions
+    def _update_scroll_region(self, event=None):
+
+        self.scroll_canvas.configure(
+            scrollregion=self.scroll_canvas.bbox("all")
+        )
+
+
+    def _resize_scroll_frame(self, event):
+
+        self.scroll_canvas.itemconfigure(
+            self.canvas_window,
+            width=event.width
+        )
+
+
+    def _on_mousewheel(self, event):
+
+        # Only scroll when the mouse is over this dashboard
+        widget = self.winfo_containing(event.x_root, event.y_root)
+
+        if widget is None:
+            return
+
+        current = widget
+
+        while current is not None:
+
+            if current == self:
+
+                if event.num == 4:
+                    self.scroll_canvas.yview_scroll(-1, "units")
+
+                elif event.num == 5:
+                    self.scroll_canvas.yview_scroll(1, "units")
+
+                else:
+                    self.scroll_canvas.yview_scroll(
+                        int(-event.delta / 120),
+                        "units"
+                    )
+
+                return
+
+            current = getattr(current, "master", None)
+
 
     '''
     update_prediction_result: Updates the test results display based on the prediction result received from the server
