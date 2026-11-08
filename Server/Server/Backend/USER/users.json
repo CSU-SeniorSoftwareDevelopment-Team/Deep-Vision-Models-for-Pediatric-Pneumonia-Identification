@@ -6,16 +6,15 @@
         "isManager": false
     },
     {
+        "username": "Ada",
+        "password": "1234",
+        "ip": "100.112.33.101",
+        "isManager": false
+    },
+    {
         "username": "Jonathan",
         "password": "1234",
         "ip": "100.95.134.64",
         "isManager": false
-    },
-    {
-      "username": "Ada",
-      "password": "1234",
-      "ip": "100.112.33.101",
-      "isManager": false
     }
-
 ]

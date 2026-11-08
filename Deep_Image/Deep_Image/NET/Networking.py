@@ -17,23 +17,28 @@ from tkinter import messagebox
 #   1-  SECURE INITIALIZATION: 
 #       >   Configures a high-security default client context enforcing
 #           strict certificate verification modes while safely bypassing domain hostname checking
-#   
+#       >   Loads a universal Root CA certificate from a local file to establish a trust anchor for server authentication
+
 #   2-  ZERO-TRUST ROOT VERIFICATION: 
 #      
 #       >   Mandates a local 'root_ca.crt' file. Authenticates 
 #           the server by validating its dynamic over-the-air leaf certificate signature against 
 #           the permanent master Root CA trust stamp
-#   
+        >   Rejects all untrusted or self-signed certificates, preventing MITM attacks
+        >   Enforces TLS 1.2 or newer, rejecting legacy SSL/TLS versions
+#       
 #   3- NETWORK HEALTH PROBE:
 #     
 #       >   Applies low-level Windows TCP Keep-Alives to the raw socket 
 #           BEFORE wrapping with SSL to ensure the TLS engine propagates idle tunnel persistence
         >   Monitors server / connection state 
+        >   Automatically attempts reconnection after a configurable timeout if the connection is lost
 #   
 #   4- ERROR HANDLING: 
 #      
 #       >   Intercepts network dropouts and bad certificate alerts to close 
 #           sockets cleanly and protect local medical application memory
+        >   Provides clear console feedback for debugging and operational awareness
 # =========================================================================================
 '''
 
