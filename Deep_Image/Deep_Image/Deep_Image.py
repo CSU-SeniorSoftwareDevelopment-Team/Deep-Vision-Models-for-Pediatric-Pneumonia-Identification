@@ -47,7 +47,6 @@ import tkinter as tk
 
 
 # Backend Dependencies
-import Backend
 from UI.Frontend import Frontend
 from NET.Networking import Networking
 

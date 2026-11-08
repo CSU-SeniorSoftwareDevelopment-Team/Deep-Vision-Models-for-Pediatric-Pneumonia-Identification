@@ -1,145 +1,560 @@
+
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from PIL import Image, ImageTk
-from sympy import cancel
+
+from PIL import Image, ImageTk, ImageOps
 from NET.protocol import MsgType
-'''
-Pages are the individual views that the user sees in the GUI.
-Each page is a subclass of tk.Frame and is responsible for its own layout and functionality.
-The Frontend class manages these pages.
 
-This allows for easy navigation between them 
 
-Team note: To make pages just create a new class that inherits from tk.Frame and add it to the Frontend's page management system.
-- Steven Andrews II 
-'''
 class DashboardPage(tk.Frame):
+
     def __init__(self, parent, controller):
         super().__init__(parent)
+
         self.controller = controller
-        self.pack_propagate(False)   # Stops frames packed inside from resizing the window
-        self.grid_propagate(False)   # Stops grid layouts from resizing the window
-        
-        self.currentImageBytes = None # reset this to stop the send button from working on clear 
+        self.theme = controller.theme
 
-        #  WINDOW TITLE:
-        self.title_label = tk.Label(self, text="Dashboard Workspace:", font=("Arial", 16))
-        self.title_label.pack(pady=20)
-        
-
-        #LOGOFF BUTTON
-        logoff_btn =  self.controller.MakeButton(self,"Logoff Session:",self.controller.trigger_logoff,"#d32f2f", "#b71c1c", "#9a0007")
-        logoff_btn.pack(pady=10)
-
-        
-        # IMAGE VIEWPORT
-        self.canvas_w = 500 # setting 
-        self.canvas_h = 350
-        self.image_canvas = tk.Canvas(
-            self, width=self.canvas_w, height=self.canvas_h, 
-            bg="#f0f0f0", relief="sunken", borderwidth=1
-        )
-        self.image_canvas.pack(pady=20, expand=True)
-
-
-
-
-
-
-        # LOAD IMAGE BUTTON
-        button_frame = tk.Frame(self)
-        button_frame.pack(side="bottom", pady=20) 
-
-
-        load_btn =  self.controller.MakeButton(button_frame,"Load:",self.load_image)
-        load_btn.pack(side="left", padx=10) 
-
-
-        Send_btn =  self.controller.MakeButton(button_frame,"Send:",self.Send)
-        Send_btn.pack(side="left", padx=10) 
-
-        cancel_btn =  self.controller.MakeButton(button_frame,"Cancle:",self.Cancel)
-        cancel_btn.pack(side="left", padx=10) 
-
-        settings_btn =  self.controller.MakeButton(button_frame,"Settings:",self.controller.GotoSettingsPage)
-        settings_btn.pack(side="left", padx=10) 
-      
-
- 
-    # ----------------------------------------
-    # Helpers
-    #-----------------------------------------
-
-
-    def update_prediction_result(self, prediction_result):
-        # Placeholder for updating prediction results in the GUI
-        print(f"Prediction Result: {prediction_result}")                
-
-    def Send(self):
-        if self.currentImageBytes == None:
-            return 
-
-        self.controller.network.send_packet( # see - networking class
-                                               MsgType.IMAGE,
-                                               self.currentImageBytes
-                                            )
-        
-
-    def Cancel(self):
+        # Image state
         self.currentImageBytes = None
+        self.pil_image = None
+        self.tk_image = None
+
+        # Default canvas dimensions
+        self.canvas_w = 700
+        self.canvas_h = 420
+
+        self.configure(bg=self.theme["BG"])
+
+        self.last_prediction_result = None # save the last prediction result
+
+        self.build_ui()
+
+
+
+
+
+
+    # ========================================
+    # UI CONSTRUCTION / LAYOUT
+    # ========================================
+
+    def build_ui(self):
+
+        content = tk.Frame(self, bg=self.theme["BG"])
+        content.pack(fill="both", expand=True, padx=30, pady=20)
+
+       
+        # HEADER
+       
+
+        header = tk.Frame(content, bg=self.theme["BG"])
+        header.pack(fill="x", pady=(0, 20))
+
+        title_area = tk.Frame(header, bg=self.theme["BG"])
+        title_area.pack(side="left")
+
+        tk.Label(
+            title_area,
+            text    ="DeepImage",
+            font    =("Arial", 21, "bold"),
+            fg      =self.theme["TEXT"],
+            bg      =self.theme["BG"]
+        ).pack(anchor="w")
+
+        tk.Label(
+            title_area,
+            text    ="CLIENT WORKSPACE",
+            font    =("Arial", 9, "bold"),
+            fg      =self.theme["ACCENT"],
+            bg      =self.theme["BG"]
+        ).pack(anchor="w", pady=(3, 0))
+
+        header_buttons = tk.Frame(header, bg=self.theme["BG"])
+        header_buttons.pack(side="right")
+
+        settings_btn = self.controller.MakeButton(
+            header_buttons,
+            "Settings",
+            self.controller.GotoSettingsPage,
+            self.theme["BORDER"],
+            self.theme["BUTTON_HOVER"], 
+            self.theme["BUTTON_ACTIVE"]
+        )
+        settings_btn.pack(side="left", padx=(0, 10))
+
+        logoff_btn = self.controller.MakeButton(
+            header_buttons,
+            "Log Out",
+            self.controller.trigger_logoff,
+            self.theme["DANGER"],
+            self.theme["DANGER_HOVER"],
+            self.theme["DANGER_ACTIVE"]
+        )
+        logoff_btn.pack(side="left")
+
+       
+        # WORKSPACE HEADER
+       
+
+        workspace_header = tk.Frame(content, bg=self.theme["BG"])
+        workspace_header.pack(fill="x", pady=(0, 12))
+
+        tk.Label(
+            workspace_header,
+            text    ="Image Processing Workspace",
+            font    =("Arial", 14, "bold"),
+            fg      =self.theme["TEXT"],
+            bg      =self.theme["BG"]
+        ).pack(anchor="w")
+
+        tk.Label(
+            workspace_header,
+            text    ="Load an image and submit it to the DeepImage processing server.",
+            font    =("Arial", 9),
+            fg      =self.theme["MUTED"],
+            bg      =self.theme["BG"]
+        ).pack(anchor="w", pady=(4, 0))
+
+       
+        # IMAGE VIEWPORT CARD
+       
+
+        image_card = tk.Frame(
+            content,
+            bg                          =self.theme["CARD"],
+            highlightbackground         =self.theme["BORDER"],
+            highlightthickness          =1
+        )
+        image_card.pack(fill            ="both", expand=True)
+
+        image_content = tk.Frame(
+            image_card,
+            bg=self.theme["CARD"]
+        )
+        image_content.pack(
+            fill        ="both",
+            expand      =True,
+            padx        =15,
+            pady        =15
+        )
+
+        # Viewport header
+        viewport_header = tk.Frame(
+            image_content,
+            bg=self.theme["CARD"]
+        )
+        viewport_header.pack(fill="x", pady=(0, 10))
+
+        tk.Label(
+            viewport_header,
+            text        ="Image Preview",
+            font        =("Arial", 11, "bold"),
+            fg          =self.theme["TEXT"],
+            bg          =self.theme["CARD"]
+        ).pack(side="left")
+
+        # Image canvas
+        self.image_canvas = tk.Canvas(
+            image_content,
+            bg                      =self.theme["INPUT"],
+            highlightbackground     =self.theme["BORDER"],
+            highlightthickness      =1,
+            relief                  ="flat"
+        )
+        self.image_canvas.pack(fill="both", expand=True)
+
+        # Redraw preview when canvas dimensions change
+        self.image_canvas.bind(
+            "<Configure>",
+            self.on_canvas_resize
+        )
+
+        self.show_empty_preview()
+
+       
+        # IMAGE STATUS
+       
+
+        status_frame = tk.Frame(
+            content,
+            bg=self.theme["BG"]
+        )
+        status_frame.pack(fill="x", pady=(12, 8))
+
+        self.status_label = tk.Label(
+            status_frame,
+            text        ="Waiting for image",
+            font        =("Arial", 9),
+            fg          =self.theme["MUTED"],
+            bg          =self.theme["BG"]
+        )
+        self.status_label.pack(side="left")
+
+       
+        # ACTION BAR
+       
+
+        action_card = tk.Frame(
+            content,
+            bg=self.theme["CARD"],
+            highlightbackground=self.theme["BORDER"],
+            highlightthickness=1
+        )
+        action_card.pack(fill="x", pady=(5, 0))
+
+        action_content = tk.Frame(
+            action_card,
+            bg=self.theme["CARD"]
+        )
+        action_content.pack(fill="x", padx=15, pady=12)
+
+        left_actions = tk.Frame(
+            action_content,
+            bg=self.theme["CARD"]
+        )
+        left_actions.pack(side="left")
+
+        load_btn = self.controller.MakeButton(
+            left_actions,
+            "Load Image",
+            self.load_image,
+            self.theme["BORDER"],
+            self.theme["BUTTON_HOVER"],
+            self.theme["BUTTON_ACTIVE"]
+        )
+        load_btn.pack(side="left", padx=(0, 8))
+
+        cancel_btn = self.controller.MakeButton(
+            left_actions,
+            "Clear",
+            self.Cancel,
+            self.theme["DANGER"],
+            self.theme["DANGER_HOVER"],
+            self.theme["DANGER_ACTIVE"]
+        )
+        cancel_btn.pack(side="left")
+
+        self.send_btn = self.controller.MakeButton(
+            action_content,
+            "Send for Processing",
+            self.Send,
+            self.theme["ACCENT"],
+            "#2868BD",
+            "#1D4F91"
+        )
+        self.send_btn.pack(side="right")
+
+
+
+        # TEST RESULTS CARD
+
+        results_card = tk.Frame(
+            content,
+            bg=self.theme["CARD"],
+            highlightbackground=self.theme["BORDER"],
+            highlightthickness=1
+        )
+        results_card.pack(fill="both", expand=False, pady=(12, 0))
+
+        results_header = tk.Frame(
+            results_card,
+            bg=self.theme["CARD"]
+        )
+        results_header.pack(fill="x", padx=15, pady=(12, 5))
+
+        tk.Label(
+            results_header,
+            text="Test Results",
+            font=("Arial", 11, "bold"),
+            fg=self.theme["TEXT"],
+            bg=self.theme["CARD"]
+        ).pack(side="left")
+
+        self.result_status = tk.Label(
+            results_header,
+            text="Waiting for results",
+            font=("Arial", 9),
+            fg=self.theme["MUTED"],
+            bg=self.theme["CARD"]
+        )
+        self.result_status.pack(side="right")
+
+        # Results display
+        results_body = tk.Frame(
+            results_card,
+            bg=self.theme["INPUT"]
+        )
+        results_body.pack(fill="both", padx=15, pady=(5, 12))
+
+        self.result_text = tk.Text(
+            results_body,
+            height=7,
+            wrap="word",
+            font=("Consolas", 10),
+            bg=self.theme["INPUT"],
+            fg=self.theme["TEXT"],
+            insertbackground=self.theme["TEXT"],
+            relief="flat",
+            borderwidth=0,
+            padx=10,
+            pady=10,
+            state="disabled"
+        )
+        self.result_text.pack(
+            side="left",
+            fill="both",
+            expand=True
+        )
+
+        results_scrollbar = tk.Scrollbar(
+            results_body,
+            command=self.result_text.yview
+        )
+        results_scrollbar.pack(side="right", fill="y")
+
+        self.result_text.configure(
+            yscrollcommand=results_scrollbar.set
+        )
+
+        self.result_text.configure(state="normal")
+        self.result_text.insert(
+            "1.0",
+            "No test results received yet."
+        )
+        self.result_text.configure(state="disabled")
+
+   
+    # IMAGE PREVIEW
+   
+
+    def show_empty_preview(self):
+
         self.image_canvas.delete("all")
 
+        width = max(self.image_canvas.winfo_width(), 1)
+        height = max(self.image_canvas.winfo_height(), 1)
 
-
-    def load_image(self):
-        file_path = filedialog.askopenfilename(
-            title="Select Chest X-ray: ",
-            filetypes=[("Image Files", "*.png *.jpg *.jpeg *.bmp *.gif"), ("All Files", "*.*")]
+        self.image_canvas.create_text(
+            width // 2,
+            height // 2,
+            text    ="No Image Loaded\n\nLoad an image to begin processing.",
+            font    =("Arial", 12),
+            fill    =self.theme["MUTED"],
+            justify ="center",
+            tags    ="placeholder"
         )
+
+    def on_canvas_resize(self, event):
+
+        if self.pil_image is None:
+            self.show_empty_preview()
+        else:
+            self.render_preview()
+
+    def render_preview(self):
+
+        if self.pil_image is None:
+            self.show_empty_preview()
+            return
+
+        width = self.image_canvas.winfo_width()
+        height = self.image_canvas.winfo_height()
+
+        if width <= 1 or height <= 1:
+            return
+
+        # Leave some space around the image
+        available_width = max(width - 30, 1)
+        available_height = max(height - 30, 1)
+
+        preview = self.pil_image.copy()
+        preview.thumbnail(
+            (available_width, available_height),
+            Image.Resampling.LANCZOS
+        )
+
+        self.tk_image = ImageTk.PhotoImage(preview)
+
+        self.image_canvas.delete("all")
+
+        self.image_canvas.create_image(
+            width // 2,
+            height // 2,
+            anchor="center",
+            image=self.tk_image
+        )
+
+
+
+    # ==================================================================================================================================
+    # HELPER FUNCTIONS
+    # ==================================================================================================================================
+
+    '''
+    update_prediction_result: Updates the test results display based on the prediction result received from the server
+    '''
+    def update_prediction_result(self, prediction_result):
+
+        if not isinstance(prediction_result, dict):
+            return
+
+        if prediction_result == self.last_prediction_result:
+            return
+
+        self.last_prediction_result = prediction_result
+
+        status          = prediction_result.get("status", "UNKNOWN")
+        diagnosis       = prediction_result.get("diagnosis", "Unavailable")
+        confidence      = prediction_result.get("confidence", 0.0)
+
+        self.result_text.configure(state="normal")
+        self.result_text.delete( "1.0" , tk.END) # Clear previous results
+
+        if status == "OK":
+
+            self.result_status.config(
+                text="Analysis Complete",
+                fg=self.theme["SUCCESS"]
+            )
+
+            self.result_text.insert(
+                tk.END,
+                f"DIAGNOSIS\n{diagnosis}\n\n"
+                f"CONFIDENCE\n{confidence:.2f}%\n\n"
+                f"STATUS\n{status}"
+            )
+
+        else:
+
+            self.result_status.config(
+                text="Analysis Failed",
+                fg=self.theme["ERROR"]
+            )
+
+            self.result_text.insert(
+                tk.END,
+                f"STATUS\n{status}\n\n"
+                f"DIAGNOSIS\n{diagnosis}"
+            )
+
+        self.result_text.configure(state="disabled")
+
+
+    '''
+    Send: Sends the currently loaded image to the server for processing
+    '''
+    def Send(self):
+
+        if self.currentImageBytes is None:
+            self.status_label.config(
+                text="No image available to send",
+                fg=self.theme["WARNING"]
+            )
+            return
+
+        try:
+
+            self.controller.network.send_packet(
+                MsgType.IMAGE,
+                self.currentImageBytes
+            )
+
+            self.status_label.config(
+                text="Image submitted for processing",
+                fg=self.theme["SUCCESS"]
+            )
+
+        except Exception as e:
+
+            self.status_label.config(
+                text="Failed to submit image",
+                fg=self.theme["ERROR"]
+            )
+
+            messagebox.showerror(
+                "Network Error",
+                f"Unable to send image:\n{e}"
+            )
+
+    '''
+    Cancel: Clears the currently loaded image and resets the preview and status
+    '''
+    def Cancel(self):
+
+        self.currentImageBytes = None
+        self.pil_image = None
+        self.tk_image = None
+
+        self.show_empty_preview()
+
+        self.status_label.config(
+            text="Waiting for image",
+            fg=self.theme["MUTED"]
+        )
+
+
+    '''
+    load_image: Opens a file dialog to select an image, loads it, and updates the preview and status
+    '''
+    def load_image(self):
+
+        file_path = filedialog.askopenfilename(
+            title="Select Image",
+            filetypes=[
+                ("Image Files", "*.png *.jpg *.jpeg *.bmp *.gif"),
+                ("All Files", "*.*")
+            ]
+        )
+
         if not file_path:
             return
 
         try:
-            # Load image using Pillow
-            pil_image = Image.open(file_path)
 
-            # Message box popup 
-            user_choice = messagebox.askokcancel(
-                title="Confirm Action:", message="Send for Processing?"
+            # Read original image bytes.
+            # These are the bytes sent to the server.
+            with open(file_path, "rb") as file:
+                image_bytes = file.read()
+
+            # Load and normalize the image for preview.
+            with Image.open(file_path) as image:
+                image = ImageOps.exif_transpose(image)
+                image.load()
+
+                if image.mode not in ("RGB", "RGBA"):
+                    image = image.convert("RGBA")
+
+                self.pil_image = image.copy()
+
+            # Update image state only after successful loading.
+            self.currentImageBytes = image_bytes
+
+            # Display preview using current canvas dimensions.
+            self.render_preview()
+
+            self.status_label.config(
+                text="Image loaded and ready to submit",
+                fg=self.theme["SUCCESS"]
             )
 
-            # get bytes 
-            fb_ = None
-            with open(file_path, "rb") as f:
-                 fb_ = f.read()
-
-            if user_choice: 
-                if fb_ != None:
-                     self.currentImageBytes = fb_
-                     self.controller.network.send_packet( # see networking class
-                                                         MsgType.IMAGE,
-                                                         fb_          )
-            else:  
-                self.currentImageBytes = fb_ # saves it to current image bytes
-                print("User clicked Cancel. Aborting NET send...")
-
-           
-            # Defined above in the __init__ 
-            pil_image.thumbnail((self.canvas_w, self.canvas_h))
-
-            # Convert to Tkinter PhotoImage format
-            tk_image = ImageTk.PhotoImage(pil_image)
-
-      
-            center_x = self.canvas_w // 2
-            center_y = self.canvas_h // 2
-
-            # replace and display it
-            self.image_canvas.delete("all")
-            self.image_canvas.create_image(center_x, center_y, anchor="center", image=tk_image)
-            self.image_canvas.image = tk_image
-            print(f"Successfully loaded and displayed: {file_path}")
-           
+            print(f"Successfully loaded: {file_path}")
 
         except Exception as e:
+
+            self.currentImageBytes = None
+            self.pil_image = None
+            self.tk_image = None
+
+            self.show_empty_preview()
+
+            self.status_label.config(
+                text="Unable to load image",
+                fg=self.theme["ERROR"]
+            )
+
+            messagebox.showerror(
+                "Image Error",
+                f"Unable to load image:\n{e}"
+            )
+
             print(f"Error loading image: {e}")

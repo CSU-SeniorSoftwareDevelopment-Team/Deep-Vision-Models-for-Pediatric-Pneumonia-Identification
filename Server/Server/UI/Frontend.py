@@ -10,6 +10,77 @@ from UI.Pages.DashboardPage import DashboardPage
 
 class Frontend:
     def __init__(self, root, backend_, network_):
+
+
+         # theme 
+        self.theme = {
+    
+            # BASE COLORS
+    
+            "BG": "#171A21",          # Main application background
+            "CARD": "#222733",        # Cards and panels
+            "INPUT": "#171D28",       # Input fields and image preview
+            "BORDER": "#343C4B",      # Borders and outlines
+
+    
+            # TEXT COLORS
+    
+            "TEXT": "#E6EAF0",        # Primary text
+            "MUTED": "#929BAA",       # Secondary text
+            "PLACEHOLDER": "#687386", # Placeholder text
+
+    
+            # ACCENT COLORS
+    
+            "ACCENT": "#3984E8",      # Primary accent
+            "ACCENT_HOVER": "#2868BD",
+            "ACCENT_ACTIVE": "#1D4F91",
+
+    
+            # BUTTON COLORS
+    
+            "BUTTON": "#343C4B",
+            "BUTTON_HOVER": "#414B5D",
+            "BUTTON_ACTIVE": "#283140",
+
+ 
+            # STATUS COLORS        
+    
+            "SUCCESS": "#4CAF50",
+            "WARNING": "#E0A03B",
+            "ERROR": "#E05252",
+            "INFO": "#3984E8",
+
+  
+            # DESTRUCTIVE ACTIONS
+    
+            "DANGER": "#C03939",         # logoff button 
+            "DANGER_HOVER": "#A93232",
+            "DANGER_ACTIVE": "#922B21",
+
+    
+            # NETWORK INDICATORS
+    
+            "ONLINE": "#4CAF50",        # inidicator bars / text inidcaotrs 
+            "OFFLINE": "#E05252",
+            "CONNECTING": "#E0A03B",
+
+    
+            # GENERAL UI
+    
+            "DISABLED": "#555D6B",     
+            "SELECTION": "#3984E8",
+            "WHITE": "#FFFFFF",
+            "BLACK": "#000000",
+
+            # INDICATOR BAR
+            "INDICATOR_BAR": "#f0f0f0",
+
+
+        }
+
+
+
         self.root = root
         self.root.title("DeepImage - Server")
         self.root.geometry("900x700")
@@ -58,7 +129,7 @@ class Frontend:
 
 
     '''
-        MakeButton : Reduces the amount of code needed to produce a button 
+        MakeButton: Creates a styled button with hover and click effects.
     '''
     def MakeButton(self,parent, text, command, bg_color="#007bff", hover_color="#005cbf", click_color="#004085"):
         btn = tk.Button(
@@ -88,24 +159,24 @@ class Frontend:
     create_indicator_bar: Creates a top bar in the GUI that displays the network connection status and server state.
     '''
     def create_indicator_bar(self):
-        bar = tk.Frame(self.root, height=40, bg="#f0f0f0", bd=1, relief="groove")
+        bar = tk.Frame(self.root, height=40, bg=self.theme["INDICATOR_BAR"], bd=1, relief="groove")
         bar.pack(side="top", fill="x")
 
         # Live Network connection check status
-        tk.Label(bar, text="Network Live:", bg="#f0f0f0", font=("Arial", 10, "bold")).pack(side="left", padx=5)
-        self.net_indicator = tk.Canvas(bar, width=15, height=15, bg="#f0f0f0", highlightthickness=0)
+        tk.Label(bar, text="Network Live:", bg=self.theme["INDICATOR_BAR"], font=("Arial", 10, "bold")).pack(side="left", padx=5)
+        self.net_indicator = tk.Canvas(bar, width=15, height=15, bg=self.theme["INDICATOR_BAR"], highlightthickness=0)
         self.net_indicator.pack(side="left", padx=5)
         self.net_dot = self.net_indicator.create_oval(2, 2, 14, 14, fill="red")
 
         # Remote server context operational status engine 
-        tk.Label(bar, text="Server State:", bg="#f0f0f0", font=("Arial", 10, "bold")).pack(side="left", padx=(20, 5))
-        self.state_indicator = tk.Canvas(bar, width=15, height=15, bg="#f0f0f0", highlightthickness=0)
+        tk.Label(bar, text="Server State:", bg=self.theme["INDICATOR_BAR"], font=("Arial", 10, "bold")).pack(side="left", padx=(20, 5))
+        self.state_indicator = tk.Canvas(bar, width=15, height=15, bg=self.theme["INDICATOR_BAR"], highlightthickness=0)
         self.state_indicator.pack(side="left", padx=5)
         self.state_dot = self.state_indicator.create_oval(2, 2, 14, 14, fill="blue")
 
         # Active Users display
-        tk.Label(bar, text="Active Users:", bg="#f0f0f0", font=("Arial", 10, "bold")).pack(side="left", padx=(20, 5))
-        self.user_count_label = tk.Label(bar, text=str(self.network.numberOfActiveUsers), bg="#f0f0f0", font=("Arial", 10))
+        tk.Label(bar, text="Active Users:", bg=self.theme["INDICATOR_BAR"], font=("Arial", 10, "bold")).pack(side="left", padx=(20, 5))
+        self.user_count_label = tk.Label(bar, text=str(self.network.numberOfActiveUsers), bg=self.theme["INDICATOR_BAR"], font=("Arial", 10))
         self.user_count_label.pack(side="left", padx=5)
 
 

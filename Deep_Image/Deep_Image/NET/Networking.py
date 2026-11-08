@@ -4,7 +4,7 @@ import threading
 import struct  
 import time
 from NET.protocol import MsgType
-
+from tkinter import messagebox
 '''
 # =========================================================================================
 # AUTHOR:       Steven Andrews II
@@ -42,6 +42,7 @@ class Networking(object):
         self.IP                     = '100.105.179.38'   # this needs to be the VPN - Ask Steven To set this up for each person in the group for testing - Tailscale VPN to traverse NAT and firewalls
 
         self.port                   = 8500               # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
+        self.reconnect_speed        = 5                  # Time in seconds to wait before attempting to reconnect after a disconnection
         self.keepalive_time         = 5000               # Time in seconds before sending the first keep-alive probe
         self.keepalive_interval     = 1000               # Time in seconds between keep-alive probes
         self.soc                    = None               # socket object for the connection
@@ -53,7 +54,7 @@ class Networking(object):
         self.forcedLogOut           = False              # Forces the logout to login page ( frontend toggle )
 
 
-        self.prediction_result = {}               # placeholder for the last prediction result received from the server
+        self.prediction_result = {}                      # placeholder for the last prediction result received from the server
 
 
         # start a timer
@@ -344,7 +345,7 @@ class Networking(object):
     def update(self):
         # tries to reconnect/start background thread if the connection is down
         if self.is_running == False:
-           if time.time() - self.current_time >  5:
+           if time.time() - self.current_time >  self.reconnect_speed:
               print("Network disconnected. Attempting reconnection...")
               self.Start()
               self.current_time = time.time()
@@ -374,13 +375,22 @@ class Networking(object):
         elif msg_type == MsgType.IMAGE:
             self.handle_image_payload(payload)
 
+        #Tells the client to exit the dashboard and logout, must wait until sends an ok signal to log back in
+        # future update : add a forced logoff message type to the protocol to avoid using the image payload for this purpose
+        #3lif msg_type == MsgType.UPDATE:
+        #    self.handle_image_payload(payload)
+
 
     def handle_login_response(self,payload):
         response = payload.decode('utf-8')
         if response == "OK":
             self.is_loggedin = True
-        if response == "NO":
+        if response == "NO" or response == "UPDATING":
             self.is_loggedin = False
+        if  response == "UPDATING":
+            messagebox.showinfo("Update", "The system is currently updating. Please try again later.")
+
+
 
     def handle_logout_response(self,payload):
         response = payload.decode('utf-8')
@@ -395,6 +405,11 @@ class Networking(object):
    
     def handle_image_payload(self,payload):
         response = payload.decode('utf-8')
+        
+        if response =="UPDATING":
+            messagebox.showinfo("Update", "The system is currently updating. Please try again later.")
+            return
+        
         results = response.split(":")
 
         if len(results) == 3:
@@ -404,5 +419,6 @@ class Networking(object):
                     "diagnosis": results[1],
                     "confidence": float(results[2])*100  # Convert to percentage
                 }
-
+            
+                
 

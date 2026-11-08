@@ -27,6 +27,9 @@ class User():
         self.loggedin       = False   # State tracking 
         self.soc            = None    # Net socket 
 
+
+        self.clientThread = None
+
   
 
 

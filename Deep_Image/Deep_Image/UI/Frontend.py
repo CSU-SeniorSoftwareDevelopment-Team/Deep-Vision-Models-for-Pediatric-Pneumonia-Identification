@@ -12,20 +12,87 @@ from UI.Pages.SettingsPage import SettingsPage
 
 class Frontend:
     def __init__(self, root, network_):
+
+         # theme 
+        self.theme = {
+    
+            # BASE COLORS
+    
+            "BG": "#171A21",          # Main application background
+            "CARD": "#222733",        # Cards and panels
+            "INPUT": "#171D28",       # Input fields and image preview
+            "BORDER": "#343C4B",      # Borders and outlines
+
+    
+            # TEXT COLORS
+    
+            "TEXT": "#E6EAF0",        # Primary text
+            "MUTED": "#929BAA",       # Secondary text
+            "PLACEHOLDER": "#687386", # Placeholder text
+
+    
+            # ACCENT COLORS
+    
+            "ACCENT": "#3984E8",      # Primary accent
+            "ACCENT_HOVER": "#2868BD",
+            "ACCENT_ACTIVE": "#1D4F91",
+
+    
+            # BUTTON COLORS
+    
+            "BUTTON": "#343C4B",
+            "BUTTON_HOVER": "#414B5D",
+            "BUTTON_ACTIVE": "#283140",
+
+ 
+            # STATUS COLORS
+    
+            "SUCCESS": "#4CAF50",
+            "WARNING": "#E0A03B",
+            "ERROR": "#E05252",
+            "INFO": "#3984E8",
+
+  
+            # DESTRUCTIVE ACTIONS
+    
+            "DANGER": "#C03939",
+            "DANGER_HOVER": "#A93232",
+            "DANGER_ACTIVE": "#922B21",
+
+    
+            # NETWORK INDICATORS
+    
+            "ONLINE": "#4CAF50",
+            "OFFLINE": "#E05252",
+            "CONNECTING": "#E0A03B",
+
+    
+            # GENERAL UI
+    
+            "DISABLED": "#555D6B",
+            "SELECTION": "#3984E8",
+            "WHITE": "#FFFFFF",
+            "BLACK": "#000000",
+
+            # INDICATOR BAR COLORS
+            "INDICATOR_BAR": "#f0f0f0",
+        }
+
         self.root = root
-        self.root.title("DeepImage - Server")
+        self.root.title("DeepImage - Client")
         self.root.geometry("900x700")
-        self.root.configure(bg="#f8f9fa")
+        self.root.configure(bg=self.theme["BG"])
         self.inDash             = False
         self.insettingsPage     = False
 
-
-        
-
-
+       
+       
         # Dependency injection
-
         self.network = network_
+
+
+        # Build persistent indicators at the top layout
+        self.create_indicator_bar()
 
         # Dynamic Page Container
         self.container = tk.Frame(self.root)
@@ -35,8 +102,7 @@ class Frontend:
 
         self.pages = {}
         
-        # Build persistent indicators at the top layout
-        self.create_indicator_bar()
+
 
         # Initialize tracking frames using the explicitly imported class targets
         # Ensure custom Dashboard view is listed here once extracted into its own file
@@ -52,6 +118,9 @@ class Frontend:
         print(" [Frontend] Initialized")
 
 
+    '''
+    MakeButton: Creates a styled button with hover and click effects.
+    '''
     def MakeButton(self,parent, text, command, bg_color="#007bff", hover_color="#005cbf", click_color="#004085"):
         btn = tk.Button(
             parent,
@@ -77,12 +146,12 @@ class Frontend:
     create_indicator_bar: Creates a top bar in the GUI that displays the network connection status and server state.
     '''
     def create_indicator_bar(self):
-        bar = tk.Frame(self.root, height=40, bg="#f0f0f0", bd=1, relief="groove")
-        bar.pack(side="top", fill="x")
+        bar = tk.Frame(self.root, height=40, bg=self.theme["INDICATOR_BAR"], bd=1, relief="groove")
+        bar.pack(side="bottom", fill="x")
 
         # Live Network connection check status
-        tk.Label(bar, text="Network Live:", bg="#f0f0f0", font=("Arial", 10, "bold")).pack(side="left", padx=5)
-        self.net_indicator = tk.Canvas(bar, width=15, height=15, bg="#f0f0f0", highlightthickness=0)
+        tk.Label(bar, text="Network Live:", bg=self.theme["INDICATOR_BAR"], font=("Arial", 10, "bold")).pack(side="left", padx=5)
+        self.net_indicator = tk.Canvas(bar, width=15, height=15, bg=self.theme["INDICATOR_BAR"], highlightthickness=0)
         self.net_indicator.pack(side="left", padx=5)
         self.net_dot = self.net_indicator.create_oval(2, 2, 14, 14, fill="red")
 
@@ -102,7 +171,9 @@ class Frontend:
 
 
 
-
+    # ========================================================================
+    # USER INTERACTION TRIGGERS
+    # =======================================================================
 
     '''
     Trigger_login_attempt: Validates the provided username and password against the system credentials.
@@ -127,19 +198,29 @@ class Frontend:
         self.inDash = False
         self.show_page("LoginPage")
         
-
+    '''
+    GotoSettingsPage: Navigates the user to the SettingsPage if they are currently logged in and connected.
+    '''
     def GotoSettingsPage(self):
         if self.inDash == True: # is loged in and connected / short circuit check 
             self.insettingsPage = True
             self.show_page("SettingsPage")
 
-
+    '''
+    GoBacktoDash: Navigates the user back to the DashboardPage from the SettingsPage.
+    '''
     def GoBacktoDash(self):
         if self.inDash == True:
              self.insettingsPage = False 
              self.show_page("DashboardPage")
      
 
+
+
+
+    #========================================================================
+    #  UPDATE LOOP / Bootstrap
+    #========================================================================
 
     '''
     Boot: Starts the Tkinter main event loop, allowing the GUI to run and respond to user interactions.
@@ -156,11 +237,6 @@ class Frontend:
            self.show_page("DashboardPage")
            self.inDash  = True
 
-           # indicator 
-        if self.network and self.network.is_connected:
-            self.net_indicator.itemconfig(self.net_dot, fill="green")
-        else:
-            self.net_indicator.itemconfig(self.net_dot, fill="red")
         # forced logout
         if self.network.forcedLogOut == True:
            self.inDash                  = False
@@ -175,3 +251,8 @@ class Frontend:
             if dashboard_page:
                 dashboard_page.update_prediction_result(self.network.prediction_result)
 
+             # indicator 
+        if self.network and self.network.is_connected:
+            self.net_indicator.itemconfig(self.net_dot, fill="green")
+        else:
+            self.net_indicator.itemconfig(self.net_dot, fill="red")

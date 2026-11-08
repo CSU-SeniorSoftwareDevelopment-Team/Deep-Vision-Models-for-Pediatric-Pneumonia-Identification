@@ -7,6 +7,8 @@ import io
 from pathlib import Path
 from PIL import Image
 
+import threading
+
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -54,7 +56,7 @@ class Backend(object):
         self.print_every        = 10
         self.threshold          = 70 # threshold for error
 
-        self.lock = False
+        self.lock = threading.Lock() # locks networking while training is saving to disk 
 
         # ---------------------------------------------------------
         # VARs
@@ -288,6 +290,10 @@ class Backend(object):
             )
             print("==============================")
 
+            if epoch == epochs - 1:
+                 self.lock.acquire()
+
+
             for batch_idx, (inputs, labels) in enumerate(
                 self.train_dataloader
             ):
@@ -490,7 +496,7 @@ class Backend(object):
             f"{total_training_time / 60:.2f} minutes"
         )
 
-        self.lock = True  # lock the backend for other operations until its loaded - need to finish / unused atm
+       
 
         # save the resenet50 model - load on boot 
         if on_training_complete is not None:
@@ -498,9 +504,9 @@ class Backend(object):
 
         # save the model to disk
         self.saveModel()
-        self.loadModel()  # reload the model to ensure it's in eval mode and on the correct device
+        self.loadModel()     # reload the model to ensure it's in eval mode and on the correct device
         
-        self.lock = False  # unlock the backend for other operations
+        self.lock.release()  # Unlock the network 
 
 
 

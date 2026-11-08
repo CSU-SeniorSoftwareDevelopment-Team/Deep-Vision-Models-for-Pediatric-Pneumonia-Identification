@@ -11,6 +11,10 @@ from NET.protocol import MsgType
 # AUTHOR:       Steven Andrews II
 # ARCHITECTURE: Secure Hybrid Client-Server (Edge AI Installation)
 # SECURITY:     TLS 1.3 / Application-Layer IP Whitelisting (Dynamic VPN Optimized) [ Near production grade ] 
+
+# DESCRIPTION:  This module implements a secure, multi-threaded TCP server that listens for incoming connections,
+#               authenticates users, and processes image data using a backend AI model. 
+#               The server supports TLS encryption, IP whitelisting, and user session management.
 #------------------------------------------
 # TECHNICAL IMPLEMENTATION OUTLINE:
 #------------------------------------------
@@ -18,6 +22,10 @@ from NET.protocol import MsgType
 #   1- CORE LISTENER ENGINE: 
 #           Spools an asynchronous multi-threaded TCP socket loop 
 #           onto a dedicated background daemon thread with port reuse enabled
+            > The listener thread accepts incoming connections and spawns a new thread for each client to handle communication.
+            > Each client thread is responsible for reading and processing packets from its respective client socket.
+            
+           The listener thread and client threads are designed to run concurrently, allowing multiple clients to connect and communicate with the server simultaneously.
 #   
 #   2- INBOUND NETWORK FILTRATION:
 #           a. Socket-Level Health: Injects native Windows TCP Keep-Alives into raw sockets
@@ -28,9 +36,17 @@ from NET.protocol import MsgType
 #   3- HIGH-AVAILABILITY ROTATION: 
 #           Supports thread-safe, atomic certificate swapping 
 #           live via memory context updates without dropping the main listener thread
-#
+#            > The TLS context can be updated at runtime to swap certificates without interrupting existing connections.
+#    
 #   4- APPLICATION PROTOCOL LAYER: 
 #           Supports quick protocol additions and set up / state tracking 
+#            > An additional thread is spawned for each new connection to handle the application protocol layer
+#            > Each thread is responsible for handling the application protocol layer for a single client connection
+#
+#    5- APPLICATION PROTOCOL COMMANDS:
+#            Supported commands are defined in the shared protocol enum (NET/protocol.py) and include:
+#            > LOGIN, LOGOUT, IMAGE, and more. Each command is handled in the Handler method, which processes incoming packets based on their message type.
+#
 # =========================================================================================
 '''
 
@@ -40,14 +56,12 @@ class Networking(object):
         self.user_manager           = user_manager # Dependency injection for user management
         self.backend                = backend      # Backend AI hookup 
 
-
-        self.IP                     = '100.105.179.38'     # LISTEN ON ALL INTERFACES (0.0.0.0) ( TEAM NOTE: Steven Andrews II )
-        self.port                   = 8500          # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
-        self.is_connected           = False         # indicator 
-        self.is_running             = False         # indicator for the background thread
-        self.numberOfActiveUsers    = 0 
+        # Network Configuration
+        self.IP                     = '100.105.179.38'      # LISTEN ON ALL INTERFACES (0.0.0.0) ( TEAM NOTE: Steven Andrews II )
+        self.port                   = 8500                  # should never change, but can be changed if needed ( make sure to change it in the server as well - TEAM NOTE: Steven Andrews II )
         
-        #settings
+        # settingsfor TCP keep-alive probes - these are used to detect dead connections and prevent resource leaks
+
         self.keepalive_time         = 1000          # Time in seconds before sending the first keep-alive probe
         self.keepalive_interval     = 1000          # Time in seconds between keep-alive probes
         self.connection_amount      = 10            # maximum number of connections allowed
@@ -55,17 +69,150 @@ class Networking(object):
         # start a timer
 
 
-        
-        user_manager.LoadUsers() # load users from json file
+        # load the users from the JSON file into the user manager
+        user_manager.LoadUsers() 
         
 
-        self.current_time = time.time() 
-        self.context = None
-        self.Start()
+        # Internal state variables
+        self.current_time = time.time()                     # internal clock for the networking class to check its internal state for periodic checks, chamges, and logic. 
+        self.context                = None                  # TLS context - created in Start() 
+        self.stop_signal            = threading.Event()     # Event to signal the listener thread to stop
+        self.listener_thread        = None                  # Listener thread for handling incoming connections
+        
+        self.is_connected           = False                 # indicator 
+        self.is_running             = False                 # indicator for the background thread
+        self.numberOfActiveUsers    = 0                     # user tracker  
+
+        # Start the server
+        self.Start()    
         print(" [Networking] Initialized")
 
 
         
+
+
+    '''
+        Stop: Stops the server and disconnects all clients!
+
+        This function is designed to be called when the server needs to shut down forcably. 
+        It will notify all connected clients, close their sockets, and terminate all listener threads.
+
+        This will force all users to log out and clear their session data. Use with cautio
+
+        
+        >Dev note: I need to add a slow shutdown to allow the clients to gracefully log out before the server closes their sockets
+       
+        > Right now clients will be forced to log out and will not
+          be able to save their session data if the server is
+          stopped while they are connected.
+
+        Additional Note : 
+        Actual better implementation would be to send a "server is shutting down" message to all clients and allow them to gracefully log out before closing their sockets.
+        this way the server knows that the clients have logged out and can safely close their sockets without losing any data or running into a race conditions or bugs
+        especially with lock out bugs on the client side. 
+       
+        *** ( this is a demo, so this is not a production grade implementation  ) *** 
+
+    '''
+    def Stop(self):
+        if not self.is_running:
+            return True
+
+        print("Stopping server...")
+
+        try:
+            # Tell the server to stop accepting new connections
+            self.is_running = False
+
+            # Notify all connected users
+            response = b"Force"
+
+            users = list(self.user_manager.users.values())
+
+            for user in users:
+                if user.loggedin:
+                    try:
+                        self.send_packet(
+                            user.soc,
+                            MsgType.LOGOUT,
+                            response
+                        )
+                    except Exception as e:
+                        print(f"Failed to notify client: {e}")
+
+                    user.loggedin = False
+
+            # Signal all listener threads to terminate
+            self.stop_signal.set()
+
+            # Close the server socket to unblock accept() - Need to close the socket to unblock any accept() calls in the listener thread
+            if self.server_socket:
+                try:
+                    self.server_socket.close()
+                except OSError:
+                    pass
+
+                self.server_socket = None
+
+            # Close client sockets to unblock recv() - Need to close the sockets to unblock any recv() calls in the Handler threads
+            for user in users:
+                if user.soc:
+                    try:
+                        user.soc.shutdown(socket.SHUT_RDWR)
+                    except OSError:
+                        pass
+
+                    try:
+                        user.soc.close()
+                    except OSError:
+                        pass
+
+            # ( loops and grabs )  Collect threads that need to terminate
+            threads = []
+
+            if self.listener_thread:
+                threads.append(self.listener_thread)
+
+            for user in users:
+                if getattr(user, "clientThread", None):
+                    threads.append(user.clientThread)
+
+            # Wait for threads to finish
+            for thread in threads:
+                if thread and thread.is_alive():
+                    if thread != threading.current_thread():
+                        thread.join(timeout=5)
+
+                        if thread.is_alive():
+                            print(f"Warning: Thread {thread.name} did not terminate.")
+
+            self.listener_thread = None
+
+            print("Server stopped successfully.")
+            return True
+
+        except Exception as e:
+            print(f"Failed to stop server: {e}")
+            return False
+
+
+    '''
+        Restart: Restarts the server with optional new settings
+    '''
+    def Restart(self, new_settings=None):
+        if not self.Stop():
+            print("Cannot restart: server failed to stop.")
+            return False
+
+        if new_settings is not None:
+            # thse settings would be applied to this class and then distributed to the other classes that need them ( backend, user manager )
+            pass  
+
+        # Reset shutdown state
+        self.stop_signal.clear()
+
+        return self.Start()
+
 
 
     '''
@@ -92,8 +239,8 @@ class Networking(object):
             self.context.verify_mode = ssl.CERT_NONE 
             
             # spool the main listener loop onto a background thread
-            listener_thread = threading.Thread(target=self.Listener, args=(self.context,), daemon=True)
-            listener_thread.start()
+            self.listener_thread = threading.Thread(target=self.Listener, args=(self.context,), daemon=True)
+            self.listener_thread.start()
             self.is_running = True # running indicator for the background thread
             
             print(f"Server successfully started on port {self.port}. Listening for connections...")
@@ -118,7 +265,7 @@ class Networking(object):
         Returns: None
     '''
     def Listener(self, context):
-        while self.is_running:
+        while self.is_running and not self.stop_signal.is_set():
             try:
                 raw_client_sock, addr = self.server_socket.accept()
                 
@@ -132,7 +279,6 @@ class Networking(object):
                                                                 server_side=True
                       
                      )
-                #--------------------------------------------
 
                 except Exception as tls_err:
                     print(f"TLS Handshake failed from {addr}: {tls_err}")
@@ -151,12 +297,12 @@ class Networking(object):
                 user_.soc = secure_client_sock
 
                 # thread the client handler to allow multiple clients to connect simultaneously
-                client_thread = threading.Thread(
+                user_.clientThread = threading.Thread(
                     target=self.Handler, 
                     args=(secure_client_sock,user_, addr), 
                     daemon=True
                 )
-                client_thread.start()
+                user_.client_thread.start()
                 
             except Exception:
                 # This will catch socket breaks when Stop() 
@@ -176,7 +322,7 @@ class Networking(object):
         client_ip, client_port = addr
         print(f"Connection established from client address: {client_ip}:{client_port}")
         
-        while self.is_running:
+        while self.is_running and not self.stop_signal.is_set():
             try:
                 # read the fixed 8-byte header
                 header = self.extractParts(client_socket, 8)
@@ -356,7 +502,13 @@ class Networking(object):
     def Login(self, client_ip,client_socket, user_, payload):
         incoming_string = payload.decode('utf-8')
         username, password = incoming_string.split(':')
-        
+       
+        if self.backend.lock.locked():
+                response = f"UPDATING"
+                self.send_packet(client_socket,MsgType.LOGIN,response.encode('utf-8'))
+                print(f"Authentication failed: Update underway")
+                return False
+
         if username == user_.username and password == user_.password:
             self.AddActiveUser()
             user_.loggedin = True
@@ -390,8 +542,16 @@ class Networking(object):
 
 
     def RunImage(self, client_ip, client_socket, user_, payload):
-         if user_.loggedin == False: # not logged in yet - can not run if not loged in  
+
+         # system is updating
+         if self.backend.lock.locked():
+            response = f"UPDATING"
+            self.send_packet(client_socket,MsgType.IMAGE,response.encode('utf-8'))
             return False
+
+         if user_.loggedin == False : # not logged in yet - can not run if not loged in  
+            return False
+
          # grab results and pass them back 
          label, confidence  = self.backend.predict_from_buffer(payload)
          response = f"OK:{label}:{confidence}"
