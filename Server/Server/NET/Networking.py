@@ -557,6 +557,10 @@ class Networking(object):
 
          # grab results and pass them back 
          label, confidence  = self.backend.predict_from_buffer(payload)
+         
+         if label is None or confidence is None:
+             return False
+
          response = f"OK:{label}:{confidence}"
          self.send_packet(client_socket,MsgType.IMAGE,response.encode('utf-8'))
          return True

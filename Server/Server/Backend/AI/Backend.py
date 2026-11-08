@@ -1,3 +1,4 @@
+from math import e
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,7 +19,9 @@ from torchvision.models import resnet50, ResNet50_Weights
 class Backend(object):
     def __init__(self):
 
-        
+        Image.MAX_IMAGE_PIXELS = 100_000_000 
+
+
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu"
         )
@@ -567,9 +570,20 @@ class Backend(object):
         image_bytes:        a byte stream of the image to be predicted.
     '''
     def predict_from_buffer(self, image_bytes):
-        self.Processing = True
-        image_stream = io.BytesIO(image_bytes)
-        image = Image.open(image_stream).convert("L")
+        
+        
+        # Set the maximum image size to prevent decompression bomb errors
+        try:
+            self.Processing         = True
+            Image.MAX_IMAGE_PIXELS  = 10_000_000 
+            image_stream            = io.BytesIO(image_bytes)
+            with Image.open(image_stream) as img:
+                img.verify() 
+            image_stream.seek(0)
+            image = Image.open(image_stream).convert("L")
+        except :
+            return None,None
+
 
         sample = self.transform(image).unsqueeze(0)
 
