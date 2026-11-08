@@ -465,6 +465,8 @@ class DashboardPage(tk.Frame):
                 )
                 return
 
+            self.controller.network.user_manager.SaveUser()
+
             messagebox.showinfo(
                 "User Management",
                 f"User '{user_id}' was successfully created."
