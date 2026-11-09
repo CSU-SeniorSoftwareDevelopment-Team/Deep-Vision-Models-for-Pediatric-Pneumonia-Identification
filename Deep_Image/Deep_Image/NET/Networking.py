@@ -418,6 +418,11 @@ class Networking(object):
         if response =="UPDATING":
             messagebox.showinfo("Update", "The system is currently updating. Please try again later.")
             return
+
+        if response == "Force": # force user back out / edge case for server resetting / updating while user is logged in
+            self.forcedLogOut = True
+            self.is_loggedin = False
+            return
         
         results = response.split(":")
 

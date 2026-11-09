@@ -19,8 +19,8 @@ from torchvision.models import resnet50, ResNet50_Weights
 class Backend(object):
     def __init__(self):
 
-        Image.MAX_IMAGE_PIXELS = 100_000_000 
-
+        
+        self.MaxPixles = 10_000_000 
 
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu"
@@ -575,7 +575,7 @@ class Backend(object):
         # Set the maximum image size to prevent decompression bomb errors
         try:
             self.Processing         = True
-            Image.MAX_IMAGE_PIXELS  = 10_000_000 
+            Image.MAX_IMAGE_PIXELS  = self.MaxPixles
             image_stream            = io.BytesIO(image_bytes)
             with Image.open(image_stream) as img:
                 img.verify() 

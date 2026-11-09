@@ -552,6 +552,11 @@ class Networking(object):
             self.send_packet(client_socket,MsgType.IMAGE,response.encode('utf-8'))
             return False
 
+         if user_.loggedin == False : # not logged in yet - push back to login page
+            response = f"Force"
+            self.send_packet(client_socket,MsgType.IMAGE,response.encode('utf-8'))
+            return False    
+
          if user_.loggedin == False : # not logged in yet - can not run if not loged in  
             return False
 
