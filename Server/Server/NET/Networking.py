@@ -551,8 +551,9 @@ class Networking(object):
             response = f"UPDATING"
             self.send_packet(client_socket,MsgType.IMAGE,response.encode('utf-8'))
             return False
-
-         if user_.loggedin == False : # not logged in yet - push back to login page
+         # not logged in yet - push back to login page / edge case -
+         # server crashes,boots back up, and the client is still connected but not logged in on server
+         if user_.loggedin == False : 
             response = f"Force"
             self.send_packet(client_socket,MsgType.IMAGE,response.encode('utf-8'))
             return False    
